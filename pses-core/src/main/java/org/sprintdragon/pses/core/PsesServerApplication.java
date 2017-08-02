@@ -7,6 +7,8 @@ import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.netty4.Netty4Transport;
+import org.sprintdragon.pses.core.transport.netty4.client.NettyClient;
+import org.sprintdragon.pses.core.transport.netty4.client.NettyClientFactory;
 
 import java.util.Collections;
 
@@ -34,6 +36,11 @@ public class PsesServerApplication {
     @Bean
     public TransportService transportService() {
         return new TransportService(settings(), netty4Transport());
+    }
+
+    @Bean
+    public NettyClient nettyClient() {
+        return NettyClientFactory.get();
     }
 
 

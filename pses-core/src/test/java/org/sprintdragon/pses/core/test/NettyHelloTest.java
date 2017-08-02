@@ -8,7 +8,8 @@ import org.sprintdragon.pses.core.PsesServerApplication;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 import org.sprintdragon.pses.core.transport.netty4.client.NettyClient;
-import org.sprintdragon.pses.core.transport.netty4.client.NettyClientFactory;
+
+import javax.annotation.Resource;
 
 /**
  * Created by wangdi on 17-7-28.
@@ -17,9 +18,11 @@ import org.sprintdragon.pses.core.transport.netty4.client.NettyClientFactory;
 @SpringBootTest(classes = PsesServerApplication.class, value = "spring.profiles.active=dev")
 public class NettyHelloTest {
 
+    @Resource
+    NettyClient client;
+
     @Test
     public void testHello() throws Exception {
-        NettyClient client = NettyClientFactory.get();
         RpcRequest rpcRequest = new RpcRequest();
         rpcRequest.setRequestId(System.currentTimeMillis());
         rpcRequest.setActionName("xxx");
