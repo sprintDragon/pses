@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class Netty4Transport extends TcpTransport<Channel> {
 
+    @Resource
+    ClientRpcHandler clientRpcHandler;
     // package private for testing
     volatile Netty4OpenChannelsHandler serverOpenChannels;
     protected volatile Bootstrap bootstrap;
@@ -108,7 +110,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
                         .addLast("encoder", new LengthFieldPrepender(4, false))
                         .addLast(new RpcDecoder(RpcResponse.class))
                         .addLast(new RpcEncoder(RpcRequest.class))
-                        .addLast(new ClientRpcHandler());
+                        .addLast(clientRpcHandler);
             }
         });
 //        final ByteSizeValue tcpSendBufferSize = TCP_SEND_BUFFER_SIZE.get(settings);
