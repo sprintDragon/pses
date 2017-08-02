@@ -20,7 +20,7 @@ public class TransportService extends AbstractLifecycleComponent {
 
     //    volatile DiscoveryNode localNode = null;
     private final AtomicBoolean started = new AtomicBoolean(false);
-    protected final TcpTransport transport;
+    //    protected final TcpTransport transport;
     final ConcurrentMap<Long, RequestHolder> clientHandlers = new ConcurrentHashMap<>();
 
     final Object requestHandlerMutex = new Object();
@@ -29,14 +29,12 @@ public class TransportService extends AbstractLifecycleComponent {
 
 //    volatile ImmutableMap<String, RequestHandlerRegistry> requestHandlers = ImmutableMap.of();
 
-    public TransportService(Settings settings, TcpTransport transport) {
+    public TransportService(Settings settings) {
         super(settings);
-        this.transport = transport;
     }
 
     @Override
     protected void doStart() {
-        transport.start();
         started.compareAndSet(false, true);
     }
 
@@ -64,7 +62,7 @@ public class TransportService extends AbstractLifecycleComponent {
                 throw new RuntimeException("TransportService is closed stopped can't send request");
             }
 
-            transport.sendRequest(channel, requestId, request);
+            channel.writeAndFlush(request);
         } catch (Exception e) {
             log.error("sendRequest error", e);
         }

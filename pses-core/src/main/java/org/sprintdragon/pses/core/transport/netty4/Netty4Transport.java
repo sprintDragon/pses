@@ -9,15 +9,21 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.sprintdragon.pses.core.action.ActionFuture;
+import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
+import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
 import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.TcpTransport;
+import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 import org.sprintdragon.pses.core.transport.netty4.codec.RpcDecoder;
 import org.sprintdragon.pses.core.transport.netty4.codec.RpcEncoder;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,12 +37,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by wangdi on 17-8-2.
  */
+@Slf4j
 public class Netty4Transport extends TcpTransport<Channel> {
 
     // package private for testing
     volatile Netty4OpenChannelsHandler serverOpenChannels;
     protected volatile Bootstrap bootstrap;
     protected final Map<String, ServerBootstrap> serverBootstraps = new ConcurrentHashMap<>();
+    @Resource
+    TransportService transportService;
 
     public Netty4Transport(Settings settings, NetworkService networkService) {
         super(settings, networkService);
@@ -165,6 +174,50 @@ public class Netty4Transport extends TcpTransport<Channel> {
         serverBootstraps.put(name, serverBootstrap);
     }
 
+    public Channel doConnect(final InetSocketAddress socketAddress) {
+        log.info("trying to connect server:{}", socketAddress);
+//        if (closed) {
+//            return null;
+//        }
+
+        ChannelFuture future = bootstrap.connect(socketAddress);
+        future.addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture f) throws Exception {
+                if (f.isSuccess()) {
+                    log.info("connected to {}", socketAddress);
+                } else {
+                    log.info("connected to {} failed", socketAddress);
+                    f.channel().eventLoop().schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            doConnect(socketAddress);
+                        }
+                    }, 1, TimeUnit.SECONDS);
+                }
+            }
+        });
+
+        return future.syncUninterruptibly()
+                .channel();
+    }
+
+    public ActionFuture<RpcResponse> send(Channel channel, RpcRequest request) throws InterruptedException {
+        System.out.println("send request:" + request);
+        PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
+        execute(channel, request, actionFuture);
+        return actionFuture;
+    }
+
+    private void execute(Channel channel, RpcRequest request, PlainActionFuture<RpcResponse> actionFuture) {
+        transportService.sendRequest(channel, request, new ActionListenerResponseHandler<RpcResponse>(actionFuture) {
+            @Override
+            public RpcResponse newInstance() {
+                return new RpcResponse();
+            }
+        });
+    }
+
+
     protected InetSocketAddress getLocalAddress(Channel channel) {
         return (InetSocketAddress) channel.localAddress();
     }
@@ -205,8 +258,11 @@ public class Netty4Transport extends TcpTransport<Channel> {
     }
 
     @Override
-    public void sendRequest(Channel channel, long requestId, RpcRequest request) {
-        channel.writeAndFlush(request);
+    public ActionFuture<RpcResponse> sendRequest(Channel channel, long requestId, RpcRequest request) {
+        System.out.println("send request:" + request);
+        PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
+        execute(channel, request, actionFuture);
+        return actionFuture;
     }
 
     @Override

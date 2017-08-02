@@ -8,15 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NettyClientFactory {
 
-    public static NettyClient get() {
-        //connect
-        NettyClient newClient = new NettyClient();
-        //TODO get from service registry
-        String host = "127.0.0.1";
-        int port = 9090;
-        newClient.connect(new InetSocketAddress(host, port));
-        return newClient;
-    }
+//    public static NettyClient get() {
+//        //connect
+//        NettyClient newClient = new NettyClient();
+//        //TODO get from service registry
+//        String host = "127.0.0.1";
+//        int port = 9090;
+//        newClient.connect(new InetSocketAddress(host, port));
+//        return newClient;
+//    }
 
 
 }

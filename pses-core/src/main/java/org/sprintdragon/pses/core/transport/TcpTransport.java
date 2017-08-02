@@ -1,6 +1,7 @@
 package org.sprintdragon.pses.core.transport;
 
 import lombok.extern.slf4j.Slf4j;
+import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
 import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
@@ -85,5 +86,5 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
 
     public abstract void sendErrorResponse(Channel channel, Exception exception, long requestId, String action);
 
-    public abstract void sendRequest(Channel channel, long requestId, RpcRequest request);
+    public abstract ActionFuture<RpcResponse> sendRequest(Channel channel, long requestId, RpcRequest request);
 }
