@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
 import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
+import org.sprintdragon.pses.core.transport.dto.RpcRequest;
+import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -78,4 +80,10 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
 
         return boundSocket.get();
     }
+
+    public abstract void sendResponse(Channel channel, RpcResponse response, long requestId, String action);
+
+    public abstract void sendErrorResponse(Channel channel, Exception exception, long requestId, String action);
+
+    public abstract void sendRequest(Channel channel, long requestId, RpcRequest request);
 }

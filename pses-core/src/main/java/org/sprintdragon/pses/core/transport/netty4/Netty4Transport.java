@@ -13,6 +13,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.TcpTransport;
+import org.sprintdragon.pses.core.transport.dto.RpcRequest;
+import org.sprintdragon.pses.core.transport.dto.RpcResponse;
+import org.sprintdragon.pses.core.transport.netty4.codec.RpcDecoder;
+import org.sprintdragon.pses.core.transport.netty4.codec.RpcEncoder;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -93,9 +97,9 @@ public class Netty4Transport extends TcpTransport<Channel> {
 //                                    //处理分包传输问题
                         .addLast("decoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4))
                         .addLast("encoder", new LengthFieldPrepender(4, false))
-//                        .addLast(new RpcDecoder(TransportResponse.class))
-//                        .addLast(new RpcEncoder(TransportRequest.class))
-                        .addLast(new Netty4MessageChannelHandler(Netty4Transport.this, ".client"));
+                        .addLast(new RpcDecoder(RpcResponse.class))
+                        .addLast(new RpcEncoder(RpcRequest.class))
+                        .addLast(new ClientRpcHandler());
             }
         });
 //        final ByteSizeValue tcpSendBufferSize = TCP_SEND_BUFFER_SIZE.get(settings);
@@ -150,9 +154,9 @@ public class Netty4Transport extends TcpTransport<Channel> {
 //                                    //处理分包传输问题
                         .addLast("decoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4))
                         .addLast("encoder", new LengthFieldPrepender(4, false))
-//                        .addLast(new RpcDecoder(TransportResponse.class))
-//                        .addLast(new RpcEncoder(TransportRequest.class))
-                        .addLast(new Netty4MessageChannelHandler(Netty4Transport.this, name));
+                        .addLast(new RpcDecoder(RpcRequest.class))
+                        .addLast(new RpcEncoder(RpcResponse.class))
+                        .addLast(new ServerRpcHandler());
             }
         });
 
@@ -188,6 +192,21 @@ public class Netty4Transport extends TcpTransport<Channel> {
         }
 
         this.boundAddresses = boundAddresses;
+    }
+
+    @Override
+    public void sendResponse(Channel channel, RpcResponse response, long requestId, String action) {
+        channel.writeAndFlush(response);
+    }
+
+    @Override
+    public void sendErrorResponse(Channel channel, Exception exception, long requestId, String action) {
+        channel.writeAndFlush(exception);
+    }
+
+    @Override
+    public void sendRequest(Channel channel, long requestId, RpcRequest request) {
+        channel.writeAndFlush(request);
     }
 
     @Override

@@ -5,9 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
+import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.netty4.Netty4Transport;
 
-import javax.annotation.Resource;
 import java.util.Collections;
 
 /**
@@ -30,6 +30,12 @@ public class PsesServerApplication {
     public Netty4Transport netty4Transport() {
         return new Netty4Transport(settings(), networkService());
     }
+
+    @Bean
+    public TransportService transportService() {
+        return new TransportService(settings(), netty4Transport());
+    }
+
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(PsesServerApplication.class);
