@@ -5,6 +5,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.netty4.Netty4Transport;
 
 import javax.annotation.PostConstruct;
@@ -18,11 +19,11 @@ import javax.annotation.Resource;
 public class NettyServer implements ApplicationContextAware {
 
     @Resource
-    Netty4Transport netty4Transport;
+    TransportService transportService;
 
     @PostConstruct
     public void start() throws InterruptedException {
-        netty4Transport.start();
+        transportService.start();
     }
 
     @Override
