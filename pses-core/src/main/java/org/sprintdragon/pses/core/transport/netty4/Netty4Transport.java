@@ -28,12 +28,12 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by wangdi on 17-8-2.
@@ -50,6 +50,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
     volatile Netty4OpenChannelsHandler serverOpenChannels;
     protected volatile Bootstrap bootstrap;
     protected final Map<String, ServerBootstrap> serverBootstraps = new ConcurrentHashMap<>();
+    private final ReadWriteLock globalLock = new ReentrantReadWriteLock();
     @Resource
     TransportService transportService;
 
@@ -265,7 +266,66 @@ public class Netty4Transport extends TcpTransport<Channel> {
 
     @Override
     protected void doStop() {
+        final CountDownLatch latch = new CountDownLatch(1);
+        // make sure we run it on another thread than a possible IO handler thread
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                globalLock.writeLock().lock();
+                try {
 
+                    Iterator<Map.Entry<String, List<Channel>>> serverChannelIterator = serverChannels.entrySet().iterator();
+                    while (serverChannelIterator.hasNext()) {
+                        Map.Entry<String, List<Channel>> serverChannelEntry = serverChannelIterator.next();
+                        String name = serverChannelEntry.getKey();
+                        List<Channel> serverChannels = serverChannelEntry.getValue();
+                        for (Channel serverChannel : serverChannels) {
+                            try {
+                                serverChannel.close().awaitUninterruptibly();
+                            } catch (Throwable t) {
+                                log.debug("Error closing serverChannel for profile [{}]", t, name);
+                            }
+                        }
+                        serverChannelIterator.remove();
+                    }
+
+                    if (serverOpenChannels != null) {
+                        serverOpenChannels.close();
+                        serverOpenChannels = null;
+                    }
+
+                    Iterator<Map.Entry<String, ServerBootstrap>> serverBootstrapIterator = serverBootstraps.entrySet().iterator();
+                    while (serverBootstrapIterator.hasNext()) {
+                        Map.Entry<String, ServerBootstrap> serverBootstrapEntry = serverBootstrapIterator.next();
+                        String name = serverBootstrapEntry.getKey();
+                        ServerBootstrap serverBootstrap = serverBootstrapEntry.getValue();
+
+                        try {
+                            serverBootstrap.config().group().shutdownGracefully(0, 5, TimeUnit.SECONDS).awaitUninterruptibly();
+                        } catch (Throwable t) {
+                            log.debug("Error closing serverBootstrap for profile [{}]", t, name);
+                        }
+
+                        serverBootstrapIterator.remove();
+                    }
+
+
+                    if (bootstrap != null) {
+                        bootstrap.config().group().shutdownGracefully(0, 5, TimeUnit.SECONDS).awaitUninterruptibly();
+                        bootstrap = null;
+                    }
+                } finally {
+                    globalLock.writeLock().unlock();
+                    latch.countDown();
+                }
+            }
+        });
+
+        try {
+            latch.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            // ignore
+        }
     }
 
     @Override

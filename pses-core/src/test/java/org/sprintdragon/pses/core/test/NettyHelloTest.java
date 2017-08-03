@@ -1,6 +1,7 @@
 package org.sprintdragon.pses.core.test;
 
 import io.netty.channel.Channel;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,4 +34,8 @@ public class NettyHelloTest {
         System.out.println("##" + rpcResponse);
     }
 
+    @After
+    public void tearDown() throws Exception {
+        transport.stop();
+    }
 }
