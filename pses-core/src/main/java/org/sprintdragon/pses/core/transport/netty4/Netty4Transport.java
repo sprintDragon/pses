@@ -234,7 +234,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
         }
 
         String networkHost = settings.get("network.host");
-        InetSocketAddress publicAddress = new InetSocketAddress(networkService.resolvePublishHostAddress(networkHost), Integer.valueOf(port));
+        InetSocketAddress publicAddress = createPublishAddress(networkHost, Integer.valueOf(port));
         this.boundAddress = new BoundTransportAddress(boundAddresses.toArray(new InetSocketAddress[0]), publicAddress);
     }
 
@@ -265,7 +265,12 @@ public class Netty4Transport extends TcpTransport<Channel> {
     }
 
     @Override
-    protected void doStop() {
+    protected void closeChannels(final List<Channel> channels) throws IOException {
+        Netty4Utils.closeChannels(channels);
+    }
+
+    @Override
+    protected void stopInternal() {
         final CountDownLatch latch = new CountDownLatch(1);
         // make sure we run it on another thread than a possible IO handler thread
         new Thread(new Runnable() {

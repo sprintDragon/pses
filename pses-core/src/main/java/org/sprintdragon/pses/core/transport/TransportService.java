@@ -37,7 +37,7 @@ public class TransportService extends AbstractLifecycleComponent {
 
     @Override
     protected void doStop() {
-
+        started.compareAndSet(true, false);
     }
 
     @Override
