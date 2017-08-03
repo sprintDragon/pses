@@ -101,8 +101,7 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
     /**
      * Called to tear down internal resources
      */
-    protected void stopInternal() {
-    }
+    protected abstract void stopInternal();
 
     protected InetSocketAddress bindToPort(final String name, final InetAddress hostAddress, String port) {
         PortsRange portsRange = new PortsRange(port);
