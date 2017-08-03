@@ -14,6 +14,7 @@ public class Settings extends HashMap<String, String> {
     @PostConstruct
     public void init() throws Exception {
         put("bind_host", "0.0.0.0");
+        put("network.host", "0.0.0.0");
         put("port", "9090");
     }
 

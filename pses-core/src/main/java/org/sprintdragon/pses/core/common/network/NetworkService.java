@@ -20,6 +20,7 @@
 package org.sprintdragon.pses.core.common.network;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.common.component.AbstractComponent;
 
@@ -34,6 +35,7 @@ import java.util.List;
  *
  */
 @Component
+@Slf4j
 public class NetworkService extends AbstractComponent {
     /**
      * A custom name resolver can support custom lookup keys (my_net_key:ipv4) and also change
@@ -195,5 +197,76 @@ public class NetworkService extends AbstractComponent {
             }
         }
         return InetAddress.getAllByName(host);
+    }
+
+    // TODO: needs to be InetAddress[]
+    public InetAddress resolvePublishHostAddress(String publishHost) throws IOException {
+        // next check any registered custom resolvers
+        if (publishHost == null) {
+            for (CustomNameResolver customNameResolver : customNameResolvers) {
+                InetAddress addresses[] = customNameResolver.resolveDefault();
+                if (addresses != null) {
+                    return addresses[0];
+                }
+            }
+        }
+        // finally, fill with our default
+        // TODO: allow publishing multiple addresses
+        InetAddress address = resolveInetAddress(publishHost)[0];
+
+        // try to deal with some (mis)configuration
+        if (address != null) {
+            // check if its multicast: flat out mistake
+            if (address.isMulticastAddress()) {
+                throw new IllegalArgumentException("publish address: {" + NetworkAddress.format(address) + "} is invalid: multicast address");
+            }
+            // wildcard address, probably set by network.host
+            if (address.isAnyLocalAddress()) {
+                InetAddress old = address;
+                address = NetworkUtils.getFirstNonLoopbackAddresses()[0];
+                log.warn("publish address: {{}} is a wildcard address, falling back to first non-loopback: {{}}",
+                        NetworkAddress.format(old), NetworkAddress.format(address));
+            }
+        }
+        return address;
+    }
+
+    private InetAddress[] resolveInetAddress(String host) throws IOException {
+        if ((host.startsWith("#") && host.endsWith("#")) || (host.startsWith("_") && host.endsWith("_"))) {
+            host = host.substring(1, host.length() - 1);
+            // allow custom resolvers to have special names
+            for (CustomNameResolver customNameResolver : customNameResolvers) {
+                InetAddress addresses[] = customNameResolver.resolveIfPossible(host);
+                if (addresses != null) {
+                    return addresses;
+                }
+            }
+            switch (host) {
+                case "local":
+                    return NetworkUtils.getLoopbackAddresses();
+                case "local:ipv4":
+                    return NetworkUtils.filterIPV4(NetworkUtils.getLoopbackAddresses());
+                case "local:ipv6":
+                    return NetworkUtils.filterIPV6(NetworkUtils.getLoopbackAddresses());
+                case "non_loopback":
+                    return NetworkUtils.getFirstNonLoopbackAddresses();
+                case "non_loopback:ipv4":
+                    return NetworkUtils.filterIPV4(NetworkUtils.getFirstNonLoopbackAddresses());
+                case "non_loopback:ipv6":
+                    return NetworkUtils.filterIPV6(NetworkUtils.getFirstNonLoopbackAddresses());
+                default:
+                    /* an interface specification */
+                    if (host.endsWith(":ipv4")) {
+                        host = host.substring(0, host.length() - 5);
+                        return NetworkUtils.filterIPV4(NetworkUtils.getAddressesForInterface(host));
+                    } else if (host.endsWith(":ipv6")) {
+                        host = host.substring(0, host.length() - 5);
+                        return NetworkUtils.filterIPV6(NetworkUtils.getAddressesForInterface(host));
+                    } else {
+                        return NetworkUtils.getAddressesForInterface(host);
+                    }
+            }
+        }
+        return NetworkUtils.getAllByName(host);
     }
 }

@@ -7,7 +7,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.transport.TcpTransport;
 import org.sprintdragon.pses.core.transport.TransportService;
-import org.sprintdragon.pses.core.transport.netty4.Netty4Transport;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -25,7 +24,7 @@ public class NettyServer implements ApplicationContextAware {
     TcpTransport transport;
 
     @PostConstruct
-    public void start() throws InterruptedException {
+    public void start() throws Exception {
         transportService.start();
         transport.start();
     }

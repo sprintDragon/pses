@@ -261,4 +261,30 @@ public abstract class NetworkUtils {
         }
         return list.toArray(new InetAddress[list.size()]);
     }
+
+    /** Returns addresses for the first non-loopback interface that is up. */
+    static InetAddress[] getFirstNonLoopbackAddresses() throws SocketException {
+        List<InetAddress> list = new ArrayList<>();
+        for (NetworkInterface intf : getInterfaces()) {
+            if (intf.isLoopback() == false && intf.isUp()) {
+                list.addAll(Collections.list(intf.getInetAddresses()));
+                break;
+            }
+        }
+        if (list.isEmpty()) {
+            throw new IllegalArgumentException("No up-and-running non-loopback interfaces found, got " + getInterfaces());
+        }
+        sortAddresses(list);
+        return list.toArray(new InetAddress[list.size()]);
+    }
+
+    /** Returns addresses for the given host, sorted by order of preference */
+    static InetAddress[] getAllByName(String host) throws UnknownHostException {
+        InetAddress addresses[] = InetAddress.getAllByName(host);
+        // deduplicate, in case of resolver misconfiguration
+        // stuff like https://bugzilla.redhat.com/show_bug.cgi?id=496300
+        List<InetAddress> unique = new ArrayList<>(new HashSet<>(Arrays.asList(addresses)));
+        sortAddresses(unique);
+        return unique.toArray(new InetAddress[unique.size()]);
+    }
 }

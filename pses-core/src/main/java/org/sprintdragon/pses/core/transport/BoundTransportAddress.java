@@ -17,22 +17,33 @@
  * under the License.
  */
 
-package org.sprintdragon.pses.core.common.component;
+package org.sprintdragon.pses.core.transport;
 
-import org.sprintdragon.pses.core.common.lease.Releasable;
+import lombok.ToString;
 
-/**
- *
- */
-public interface LifecycleComponent extends Releasable {
+import java.net.InetSocketAddress;
 
-    Lifecycle.State lifecycleState();
+@ToString
+public class BoundTransportAddress {
 
-    void addLifecycleListener(LifecycleListener listener);
+    private InetSocketAddress[] boundAddresses;
 
-    void removeLifecycleListener(LifecycleListener listener);
+    private InetSocketAddress publishAddress;
 
-    void start() throws Exception;
+    public BoundTransportAddress(InetSocketAddress[] boundAddresses, InetSocketAddress publishAddress) {
+        if (boundAddresses == null || boundAddresses.length < 1) {
+            throw new IllegalArgumentException("at least one bound address must be provided");
+        }
+        this.boundAddresses = boundAddresses;
+        this.publishAddress = publishAddress;
+    }
 
-    void stop();
+    public InetSocketAddress[] boundAddresses() {
+        return boundAddresses;
+    }
+
+    public InetSocketAddress publishAddress() {
+        return publishAddress;
+    }
+
 }

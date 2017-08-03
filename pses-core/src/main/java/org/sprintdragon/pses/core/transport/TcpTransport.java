@@ -27,10 +27,10 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
     @Resource
     protected NetworkService networkService;
     protected final Map<String, List<Channel>> serverChannels = new ConcurrentHashMap<>();
-    protected volatile List<InetSocketAddress> boundAddresses;
+    protected volatile BoundTransportAddress boundAddress;
 
     @Override
-    protected void doStart() {
+    protected void doStart() throws Exception {
 
     }
 
@@ -48,7 +48,7 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
 
     protected abstract Channel bind(String name, InetSocketAddress address) throws IOException;
 
-    protected abstract void bindServer(final String name, final Settings settings);
+    protected abstract void bindServer(final String name, final Settings settings) throws IOException;
 
     protected InetSocketAddress bindToPort(final String name, final InetAddress hostAddress, String port) {
         PortsRange portsRange = new PortsRange(port);

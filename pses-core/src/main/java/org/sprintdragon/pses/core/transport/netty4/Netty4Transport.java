@@ -16,6 +16,7 @@ import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
 import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
 import org.sprintdragon.pses.core.common.settings.Settings;
+import org.sprintdragon.pses.core.transport.BoundTransportAddress;
 import org.sprintdragon.pses.core.transport.TcpTransport;
 import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
@@ -53,7 +54,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
     TransportService transportService;
 
     @Override
-    protected void doStart() {
+    protected void doStart() throws Exception {
         boolean success = false;
         try {
             bootstrap = createBootstrap();
@@ -112,21 +113,6 @@ public class Netty4Transport extends TcpTransport<Channel> {
                         .addLast(clientRpcHandler);
             }
         });
-//        final ByteSizeValue tcpSendBufferSize = TCP_SEND_BUFFER_SIZE.get(settings);
-//        if (tcpSendBufferSize.getBytes() > 0) {
-//            bootstrap.option(ChannelOption.SO_SNDBUF, Math.toIntExact(tcpSendBufferSize.getBytes()));
-//        }
-//
-//        final ByteSizeValue tcpReceiveBufferSize = TCP_RECEIVE_BUFFER_SIZE.get(settings);
-//        if (tcpReceiveBufferSize.getBytes() > 0) {
-//            bootstrap.option(ChannelOption.SO_RCVBUF, Math.toIntExact(tcpReceiveBufferSize.getBytes()));
-//        }
-//
-//        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, recvByteBufAllocator);
-
-//        final boolean reuseAddress = TCP_REUSE_ADDRESS.get(settings);
-//        bootstrap.option(ChannelOption.SO_REUSEADDR, reuseAddress);
-
         bootstrap.validate();
 
         return bootstrap;
@@ -227,7 +213,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
         return serverBootstraps.get(name).bind(address).syncUninterruptibly().channel();
     }
 
-    protected void bindServer(final String name, final Settings settings) {
+    protected void bindServer(final String name, final Settings settings) throws IOException {
         // Bind and start to accept incoming connections.
         InetAddress hostAddresses[];
         String bindHostsStr = settings.get("bind_host");
@@ -240,12 +226,23 @@ public class Netty4Transport extends TcpTransport<Channel> {
 
         assert hostAddresses.length > 0;
 
+        String port = settings.get("port");
         List<InetSocketAddress> boundAddresses = new ArrayList<>();
         for (InetAddress hostAddress : hostAddresses) {
-            boundAddresses.add(bindToPort(name, hostAddress, settings.get("port")));
+            boundAddresses.add(bindToPort(name, hostAddress, port));
         }
 
-        this.boundAddresses = boundAddresses;
+        String networkHost = settings.get("network.host");
+        InetSocketAddress publicAddress = new InetSocketAddress(networkService.resolvePublishHostAddress(networkHost), Integer.valueOf(port));
+        this.boundAddress = new BoundTransportAddress(boundAddresses.toArray(new InetSocketAddress[0]), publicAddress);
+    }
+
+    private InetSocketAddress createPublishAddress(String publishHost, int publishPort) {
+        try {
+            return new InetSocketAddress(networkService.resolvePublishHostAddress(publishHost), publishPort);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to resolve publish address", e);
+        }
     }
 
     @Override
