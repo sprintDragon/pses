@@ -3,20 +3,29 @@ package org.sprintdragon.pses.core.transport.netty4;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
+
+import javax.annotation.Resource;
 
 /**
  * Created by patterncat on 2016/4/6.
  */
+@Component
 @Slf4j
 public class ServerRpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
+
+    @Resource
+    TransportService transportService;
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcRequest rpcRequest) throws Exception {
         RpcResponse response = new RpcResponse();
         try {
             log.info("server handle request:{}", rpcRequest);
+            transportService.onResponseReceived(rpcRequest.getRequestId());
 //            Object result = handle(rpcRequest);
 //            response.setResult(result);
         } catch (Throwable t) {

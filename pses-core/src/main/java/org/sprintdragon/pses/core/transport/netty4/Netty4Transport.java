@@ -41,6 +41,10 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class Netty4Transport extends TcpTransport<Channel> {
 
+    @Resource
+    ClientRpcHandler clientRpcHandler;
+    @Resource
+    ServerRpcHandler serverRpcHandler;
     // package private for testing
     volatile Netty4OpenChannelsHandler serverOpenChannels;
     protected volatile Bootstrap bootstrap;
@@ -105,7 +109,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
                         .addLast("encoder", new LengthFieldPrepender(4, false))
                         .addLast(new RpcDecoder(RpcResponse.class))
                         .addLast(new RpcEncoder(RpcRequest.class))
-                        .addLast(new ClientRpcHandler(transportService));
+                        .addLast(clientRpcHandler);
             }
         });
 //        final ByteSizeValue tcpSendBufferSize = TCP_SEND_BUFFER_SIZE.get(settings);
@@ -162,7 +166,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
                         .addLast("encoder", new LengthFieldPrepender(4, false))
                         .addLast(new RpcDecoder(RpcRequest.class))
                         .addLast(new RpcEncoder(RpcResponse.class))
-                        .addLast(new ServerRpcHandler());
+                        .addLast(serverRpcHandler);
             }
         });
 
@@ -245,17 +249,17 @@ public class Netty4Transport extends TcpTransport<Channel> {
     }
 
     @Override
-    public void sendResponse(Channel channel, RpcResponse response, long requestId, String action) {
+    public void sendResponse(Channel channel, RpcResponse response, Long requestId, String action) {
         channel.writeAndFlush(response);
     }
 
     @Override
-    public void sendErrorResponse(Channel channel, Exception exception, long requestId, String action) {
+    public void sendErrorResponse(Channel channel, Exception exception, Long requestId, String action) {
         channel.writeAndFlush(exception);
     }
 
     @Override
-    public ActionFuture<RpcResponse> sendRequest(Channel channel, long requestId, RpcRequest request) {
+    public ActionFuture<RpcResponse> sendRequest(Channel channel, RpcRequest request) {
         System.out.println("send request:" + request);
         PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
         execute(channel, request, actionFuture);

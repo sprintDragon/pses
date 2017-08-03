@@ -79,9 +79,9 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
         return boundSocket.get();
     }
 
-    public abstract void sendResponse(Channel channel, RpcResponse response, long requestId, String action);
+    public abstract void sendResponse(Channel channel, RpcResponse response, Long requestId, String action);
 
-    public abstract void sendErrorResponse(Channel channel, Exception exception, long requestId, String action);
+    public abstract void sendErrorResponse(Channel channel, Exception exception, Long requestId, String action);
 
-    public abstract ActionFuture<RpcResponse> sendRequest(Channel channel, long requestId, RpcRequest request);
+    public abstract ActionFuture<RpcResponse> sendRequest(Channel channel, RpcRequest request);
 }

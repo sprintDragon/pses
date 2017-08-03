@@ -26,11 +26,10 @@ public class NettyHelloTest {
     @Test
     public void testHello() throws Exception {
         RpcRequest rpcRequest = new RpcRequest();
-        rpcRequest.setRequestId(System.currentTimeMillis());
         rpcRequest.setActionName("xxx");
         InetSocketAddress inetSocketAddress = new InetSocketAddress("192.168.1.2", 9090);
         Channel channel = transport.doConnect(inetSocketAddress);
-        RpcResponse rpcResponse = transport.sendRequest(channel, rpcRequest.getRequestId(), rpcRequest).get();
+        RpcResponse rpcResponse = transport.sendRequest(channel, rpcRequest).get();
         System.out.println("##" + rpcResponse);
     }
 

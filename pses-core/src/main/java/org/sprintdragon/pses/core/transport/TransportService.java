@@ -4,7 +4,6 @@ import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
-import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
@@ -53,6 +52,7 @@ public class TransportService extends AbstractLifecycleComponent {
 //        }
         final long requestId = newRequestId();
         try {
+            request.setRequestId(requestId);
             clientHandlers.put(requestId, new RequestHolder<>(handler));
             if (started.get() == false) {
                 // if we are not started the exception handling will remove the RequestHolder again and calls the handler to notify the caller.
@@ -98,7 +98,7 @@ public class TransportService extends AbstractLifecycleComponent {
 
     }
 
-    public TransportResponseHandler onResponseReceived(final long requestId) {
+    public TransportResponseHandler onResponseReceived(final Long requestId) {
         RequestHolder holder = clientHandlers.remove(requestId);
 //        if (holder == null) {
 //            checkForTimeout(requestId);
