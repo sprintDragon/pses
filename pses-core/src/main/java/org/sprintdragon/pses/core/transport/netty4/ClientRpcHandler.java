@@ -4,6 +4,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.springframework.stereotype.Component;
+import org.sprintdragon.pses.core.transport.TransportResponseHandler;
 import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
@@ -23,7 +24,8 @@ public class ClientRpcHandler extends SimpleChannelInboundHandler<RpcResponse> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RpcResponse rpcResponse) throws Exception {
         System.out.println("receive response:" + rpcResponse);
-        transportService.onResponseReceived(rpcResponse.getRequestId());
+        TransportResponseHandler handler = transportService.onResponseReceived(rpcResponse.getRequestId());
+        handler.handleResponse(rpcResponse);
     }
 
     @Override

@@ -29,7 +29,6 @@ public class ServerRpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
             log.info("server handle request:{}", rpcRequest);
             response.setRequestId(rpcRequest.getRequestId());
             response.setResult("success!!!");
-            transportService.onResponseReceived(rpcRequest.getRequestId());
 //            Object result = handle(rpcRequest);
 //            response.setResult(result);
         } catch (Throwable t) {
