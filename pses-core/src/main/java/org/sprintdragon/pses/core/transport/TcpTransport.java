@@ -72,7 +72,7 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
                 globalLock.writeLock().unlock();
                 latch.countDown();
             }
-        });
+        }).start();
 
         try {
             latch.await(30, TimeUnit.SECONDS);
@@ -103,8 +103,6 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
      */
     protected void stopInternal() {
     }
-
-    ;
 
     protected InetSocketAddress bindToPort(final String name, final InetAddress hostAddress, String port) {
         PortsRange portsRange = new PortsRange(port);
