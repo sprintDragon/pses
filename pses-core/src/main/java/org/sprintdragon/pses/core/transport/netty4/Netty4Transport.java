@@ -272,11 +272,6 @@ public class Netty4Transport extends TcpTransport<Channel> {
     @Override
     protected void stopInternal() {
         Releasables.close(serverOpenChannels, () -> {
-            if (serverOpenChannels != null) {
-                serverOpenChannels.close();
-                serverOpenChannels = null;
-            }
-
             Iterator<Map.Entry<String, ServerBootstrap>> serverBootstrapIterator = serverBootstraps.entrySet().iterator();
             while (serverBootstrapIterator.hasNext()) {
                 Map.Entry<String, ServerBootstrap> serverBootstrapEntry = serverBootstrapIterator.next();
