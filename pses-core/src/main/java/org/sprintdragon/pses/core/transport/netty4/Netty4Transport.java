@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
 import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
-import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.TcpTransport;
 import org.sprintdragon.pses.core.transport.TransportService;
@@ -42,8 +41,6 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class Netty4Transport extends TcpTransport<Channel> {
 
-    @Resource
-    ClientRpcHandler clientRpcHandler;
     // package private for testing
     volatile Netty4OpenChannelsHandler serverOpenChannels;
     protected volatile Bootstrap bootstrap;
@@ -108,7 +105,7 @@ public class Netty4Transport extends TcpTransport<Channel> {
                         .addLast("encoder", new LengthFieldPrepender(4, false))
                         .addLast(new RpcDecoder(RpcResponse.class))
                         .addLast(new RpcEncoder(RpcRequest.class))
-                        .addLast(clientRpcHandler);
+                        .addLast(new ClientRpcHandler(transportService));
             }
         });
 //        final ByteSizeValue tcpSendBufferSize = TCP_SEND_BUFFER_SIZE.get(settings);
