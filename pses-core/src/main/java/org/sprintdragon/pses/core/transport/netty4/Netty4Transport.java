@@ -167,9 +167,9 @@ public class Netty4Transport extends TcpTransport {
         InetSocketAddress socketAddress = node.address();
         ChannelFuture connect = bootstrap.connect(socketAddress);
 //        connect.awaitUninterruptibly((long) (connectTimeout.millis() * 1.5));
-        if (!connect.isSuccess()) {
-            throw new RuntimeException("connect_timeout");
-        }
+//        if (!connect.isSuccess()) {
+//            throw new RuntimeException("connect_timeout");
+//        }
         connect.addListener(new ChannelFutureListener() {
             public void operationComplete(ChannelFuture f) throws Exception {
                 if (f.isSuccess()) {
