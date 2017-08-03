@@ -8,6 +8,7 @@ import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -23,14 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
 
-    protected final NetworkService networkService;
+    @Resource
+    protected NetworkService networkService;
     protected final Map<String, List<Channel>> serverChannels = new ConcurrentHashMap<>();
     protected volatile List<InetSocketAddress> boundAddresses;
-
-    protected TcpTransport(Settings settings, NetworkService networkService) {
-        super(settings);
-        this.networkService = networkService;
-    }
 
     @Override
     protected void doStart() {

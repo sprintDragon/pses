@@ -11,6 +11,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
 import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
  * Created by wangdi on 17-8-2.
  */
 @Slf4j
+@Component
 public class Netty4Transport extends TcpTransport<Channel> {
 
     @Resource
@@ -48,10 +50,6 @@ public class Netty4Transport extends TcpTransport<Channel> {
     protected final Map<String, ServerBootstrap> serverBootstraps = new ConcurrentHashMap<>();
     @Resource
     TransportService transportService;
-
-    public Netty4Transport(Settings settings, NetworkService networkService) {
-        super(settings, networkService);
-    }
 
     @Override
     protected void doStart() {

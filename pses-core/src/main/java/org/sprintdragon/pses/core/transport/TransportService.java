@@ -2,6 +2,7 @@ package org.sprintdragon.pses.core.transport;
 
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
@@ -15,6 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Created by wangdi on 17-8-1.
  */
+@Component
 @Slf4j
 public class TransportService extends AbstractLifecycleComponent {
 
@@ -28,10 +30,6 @@ public class TransportService extends AbstractLifecycleComponent {
     final AtomicLong requestIds = new AtomicLong();
 
 //    volatile ImmutableMap<String, RequestHandlerRegistry> requestHandlers = ImmutableMap.of();
-
-    public TransportService(Settings settings) {
-        super(settings);
-    }
 
     @Override
     protected void doStart() {

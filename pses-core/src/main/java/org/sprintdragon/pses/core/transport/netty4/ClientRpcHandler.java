@@ -12,8 +12,8 @@ import javax.annotation.Resource;
 /**
  * Created by patterncat on 2016/4/6.
  */
-@ChannelHandler.Sharable
 @Component
+@ChannelHandler.Sharable
 public class ClientRpcHandler extends SimpleChannelInboundHandler<RpcResponse> {
 
     @Resource
@@ -24,7 +24,6 @@ public class ClientRpcHandler extends SimpleChannelInboundHandler<RpcResponse> {
     protected void channelRead0(ChannelHandlerContext ctx, RpcResponse rpcResponse) throws Exception {
         System.out.println("receive response:" + rpcResponse);
         transportService.onResponseReceived(rpcResponse.getRequestId());
-        //高并发下可能为null
     }
 
     @Override

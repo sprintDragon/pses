@@ -36,14 +36,6 @@ public abstract class AbstractLifecycleComponent extends AbstractComponent imple
 
     private final List<LifecycleListener> listeners = new CopyOnWriteArrayList<>();
 
-    protected AbstractLifecycleComponent(Settings settings) {
-        super(settings);
-    }
-
-    protected AbstractLifecycleComponent(Settings settings, Class customClass) {
-        super(settings, customClass);
-    }
-
     @Override
     public Lifecycle.State lifecycleState() {
         return this.lifecycle.state();

@@ -20,8 +20,8 @@
 package org.sprintdragon.pses.core.common.network;
 
 
+import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.common.component.AbstractComponent;
-import org.sprintdragon.pses.core.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -33,6 +33,7 @@ import java.util.List;
 /**
  *
  */
+@Component
 public class NetworkService extends AbstractComponent {
     /**
      * A custom name resolver can support custom lookup keys (my_net_key:ipv4) and also change
@@ -52,8 +53,7 @@ public class NetworkService extends AbstractComponent {
 
     private final List<CustomNameResolver> customNameResolvers;
 
-    public NetworkService(Settings settings, List<CustomNameResolver> customNameResolvers) {
-        super(settings);
+    public NetworkService(List<CustomNameResolver> customNameResolvers) {
         IfConfig.logIfNecessary();
         this.customNameResolvers = customNameResolvers;
     }
