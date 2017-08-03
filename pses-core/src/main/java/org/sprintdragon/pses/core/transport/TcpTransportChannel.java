@@ -18,13 +18,14 @@
  */
 package org.sprintdragon.pses.core.transport;
 
+import io.netty.channel.Channel;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class TcpTransportChannel<Channel> implements TransportChannel {
-    private final TcpTransport<Channel> transport;
+public final class TcpTransportChannel implements TransportChannel {
+    private final TcpTransport transport;
     protected final String action;
     protected final long requestId;
     private final String profileName;
@@ -32,7 +33,7 @@ public final class TcpTransportChannel<Channel> implements TransportChannel {
     private final String channelType;
     private final Channel channel;
 
-    public TcpTransportChannel(TcpTransport<Channel> transport, Channel channel, String channelType, String action,
+    public TcpTransportChannel(TcpTransport transport, Channel channel, String channelType, String action,
                                long requestId, String profileName) {
         this.channel = channel;
         this.transport = transport;

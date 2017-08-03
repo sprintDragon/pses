@@ -12,14 +12,11 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import org.sprintdragon.pses.core.action.ActionFuture;
-import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
-import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
+import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.lease.Releasables;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.BoundTransportAddress;
 import org.sprintdragon.pses.core.transport.TcpTransport;
-import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 import org.sprintdragon.pses.core.transport.netty4.codec.RpcDecoder;
@@ -40,7 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Slf4j
 @Component
-public class Netty4Transport extends TcpTransport<Channel> {
+public class Netty4Transport extends TcpTransport {
 
     @Resource
     ClientRpcHandler clientRpcHandler;
@@ -51,8 +48,12 @@ public class Netty4Transport extends TcpTransport<Channel> {
     protected volatile Bootstrap bootstrap;
     protected final Map<String, ServerBootstrap> serverBootstraps = new ConcurrentHashMap<>();
     private final ReadWriteLock globalLock = new ReentrantReadWriteLock();
-    @Resource
-    TransportService transportService;
+
+    @Override
+    public long serverOpen() {
+        Netty4OpenChannelsHandler channels = serverOpenChannels;
+        return channels == null ? 0 : channels.numberOfOpenChannels();
+    }
 
     @Override
     protected void doStart() throws Exception {
@@ -162,14 +163,14 @@ public class Netty4Transport extends TcpTransport<Channel> {
         serverBootstraps.put(name, serverBootstrap);
     }
 
-    public Channel doConnect(final InetSocketAddress socketAddress) {
-        log.info("trying to connect server:{}", socketAddress);
-//        if (closed) {
-//            return null;
-//        }
-
-        ChannelFuture future = bootstrap.connect(socketAddress);
-        future.addListener(new ChannelFutureListener() {
+    protected Channel connectToChannel(DiscoveryNode node) {
+        InetSocketAddress socketAddress = node.address();
+        ChannelFuture connect = bootstrap.connect(socketAddress);
+//        connect.awaitUninterruptibly((long) (connectTimeout.millis() * 1.5));
+        if (!connect.isSuccess()) {
+            throw new RuntimeException("connect_timeout");
+        }
+        connect.addListener(new ChannelFutureListener() {
             public void operationComplete(ChannelFuture f) throws Exception {
                 if (f.isSuccess()) {
                     log.info("connected to {}", socketAddress);
@@ -178,33 +179,16 @@ public class Netty4Transport extends TcpTransport<Channel> {
                     f.channel().eventLoop().schedule(new Runnable() {
                         @Override
                         public void run() {
-                            doConnect(socketAddress);
+                            connectToChannel(node);
                         }
                     }, 1, TimeUnit.SECONDS);
                 }
             }
         });
 
-        return future.syncUninterruptibly()
+        return connect.syncUninterruptibly()
                 .channel();
     }
-
-    public ActionFuture<RpcResponse> send(Channel channel, RpcRequest request) throws InterruptedException {
-        System.out.println("send request:" + request);
-        PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
-        execute(channel, request, actionFuture);
-        return actionFuture;
-    }
-
-    private void execute(Channel channel, RpcRequest request, PlainActionFuture<RpcResponse> actionFuture) {
-        transportService.sendRequest(channel, request, new ActionListenerResponseHandler<RpcResponse>(actionFuture) {
-            @Override
-            public RpcResponse newInstance() {
-                return new RpcResponse();
-            }
-        });
-    }
-
 
     protected InetSocketAddress getLocalAddress(Channel channel) {
         return (InetSocketAddress) channel.localAddress();
@@ -256,13 +240,6 @@ public class Netty4Transport extends TcpTransport<Channel> {
         channel.writeAndFlush(exception);
     }
 
-    @Override
-    public ActionFuture<RpcResponse> sendRequest(Channel channel, RpcRequest request) {
-        System.out.println("send request:" + request);
-        PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
-        execute(channel, request, actionFuture);
-        return actionFuture;
-    }
 
     @Override
     protected void closeChannels(final List<Channel> channels) throws IOException {
@@ -299,4 +276,5 @@ public class Netty4Transport extends TcpTransport<Channel> {
     protected void doClose() throws IOException {
 
     }
+
 }

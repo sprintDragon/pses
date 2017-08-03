@@ -1,13 +1,13 @@
 package org.sprintdragon.pses.core.transport;
 
+import io.netty.channel.Channel;
 import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;
-import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
 import org.sprintdragon.pses.core.common.network.NetworkService;
 import org.sprintdragon.pses.core.common.settings.Settings;
-import org.sprintdragon.pses.core.transport.dto.RpcRequest;
+import org.sprintdragon.pses.core.common.util.concurrent.KeyedLock;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
 import javax.annotation.Resource;
@@ -30,17 +30,107 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by wangdi on 17-8-2.
  */
 @Slf4j
-public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
+public abstract class TcpTransport extends AbstractLifecycleComponent implements Transport {
 
     @Resource
     protected NetworkService networkService;
     protected final Map<String, List<Channel>> serverChannels = new ConcurrentHashMap<>();
     protected volatile BoundTransportAddress boundAddress;
     private final ReadWriteLock globalLock = new ReentrantReadWriteLock();
-
+    protected volatile TransportServiceAdapter transportServiceAdapter;
     // node id to actual channel
     protected final ConcurrentMap<DiscoveryNode, Channel> connectedNodes = new ConcurrentHashMap<>();
     private final Set<Channel> openConnections = new ConcurrentSet<>();
+    protected final KeyedLock<String> connectionLock = new KeyedLock<>();
+
+    @Override
+    public void setTransportServiceAdapter(TransportServiceAdapter transportServiceAdapter) {
+        this.transportServiceAdapter = transportServiceAdapter;
+    }
+
+    @Override
+    public BoundTransportAddress boundAddress() {
+        return this.boundAddress;
+    }
+
+    @Override
+    public boolean nodeConnected(DiscoveryNode node) {
+        return connectedNodes.containsKey(node);
+    }
+
+    protected abstract Channel connectToChannel(DiscoveryNode node);
+
+    @Override
+    public void connectToNode(DiscoveryNode node) throws Exception {
+        ensureOpen();
+        if (node == null) {
+            throw new RuntimeException("can't connect to a null node");
+        }
+        globalLock.readLock().lock();
+        try {
+            connectionLock.acquire(node.id());
+            try {
+                ensureOpen();
+                Channel nodeChannel = connectedNodes.get(node);
+                if (nodeChannel != null) {
+                    return;
+                }
+                try {
+                    nodeChannel = connectToChannel(node);
+                    // we acquire a connection lock, so no way there is an existing connection
+                    connectedNodes.put(node, nodeChannel);
+                    if (log.isDebugEnabled()) {
+                        log.debug("connected to node [{}]", node);
+                    }
+                    transportServiceAdapter.raiseNodeConnected(node);
+                } catch (Exception e) {
+                    throw new RuntimeException("general node connection failure", e);
+                }
+            } finally {
+                connectionLock.release(node.id());
+            }
+        } finally {
+            globalLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void disconnectFromNode(DiscoveryNode node) {
+        connectionLock.acquire(node.id());
+        try {
+            Channel nodeChannels = connectedNodes.remove(node);
+            if (nodeChannels != null) {
+                try {
+                    log.debug("disconnecting from [{}] due to explicit disconnect call", node);
+                    nodeChannels.close();
+                } finally {
+                    log.trace("disconnected from [{}] due to explicit disconnect call", node);
+                    transportServiceAdapter.raiseNodeDisconnected(node);
+                }
+            }
+        } finally {
+            connectionLock.release(node.id());
+        }
+    }
+
+    public Channel nodeChannel(DiscoveryNode node) throws Exception {
+        Channel nodeChannels = connectedNodes.get(node);
+        if (nodeChannels == null) {
+            throw new RuntimeException("Node not connected");
+        }
+        return nodeChannels;
+    }
+
+    /**
+     * Ensures this transport is still started / open
+     *
+     * @throws IllegalStateException if the transport is not started / open
+     */
+    protected final void ensureOpen() {
+        if (lifecycle.started() == false) {
+            throw new IllegalStateException("transport has been stopped");
+        }
+    }
 
     @Override
     protected void doStart() throws Exception {
@@ -136,5 +226,4 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent {
 
     public abstract void sendErrorResponse(Channel channel, Exception exception, Long requestId, String action);
 
-    public abstract ActionFuture<RpcResponse> sendRequest(Channel channel, RpcRequest request);
 }
