@@ -74,7 +74,6 @@ public class Netty4Transport extends TcpTransport {
         }
     }
 
-
     /**
      * client bootstrap
      *
@@ -84,7 +83,6 @@ public class Netty4Transport extends TcpTransport {
         final Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(new NioEventLoopGroup(5));
         bootstrap.channel(NioSocketChannel.class);
-
 
 //        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(defaultConnectionProfile.getConnectTimeout().millis()));
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
@@ -231,15 +229,9 @@ public class Netty4Transport extends TcpTransport {
     }
 
     @Override
-    public void sendResponse(Channel channel, RpcResponse response, Long requestId, String action) {
+    public void sendResponse(Channel channel, RpcResponse response) {
         channel.writeAndFlush(response);
     }
-
-    @Override
-    public void sendErrorResponse(Channel channel, Exception exception, Long requestId, String action) {
-        channel.writeAndFlush(exception);
-    }
-
 
     @Override
     protected void closeChannels(final List<Channel> channels) throws IOException {

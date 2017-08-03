@@ -56,7 +56,7 @@ public final class TcpTransportChannel implements TransportChannel {
     @Override
     public void sendResponse(RpcResponse response) throws IOException {
         try {
-            transport.sendResponse(channel, response, requestId, action);
+            transport.sendResponse(channel, response);
         } finally {
             release(false);
         }
@@ -65,7 +65,10 @@ public final class TcpTransportChannel implements TransportChannel {
     @Override
     public void sendResponse(Exception exception) throws IOException {
         try {
-            transport.sendErrorResponse(channel, exception, requestId, action);
+            RpcResponse rpcResponse = new RpcResponse();
+            rpcResponse.setError(exception);
+            rpcResponse.setRequestId(requestId);
+            transport.sendResponse(channel, rpcResponse);
         } finally {
             release(true);
         }

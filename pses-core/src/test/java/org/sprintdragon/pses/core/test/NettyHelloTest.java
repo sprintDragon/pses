@@ -26,7 +26,6 @@ public class NettyHelloTest {
     TransportClient client;
     DiscoveryNode namedNode;
 
-
     @Test
     public void testHello() throws Exception {
         RpcRequest rpcRequest = new RpcRequest();
