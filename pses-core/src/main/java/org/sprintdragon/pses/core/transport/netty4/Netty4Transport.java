@@ -277,9 +277,8 @@ public class Netty4Transport extends TcpTransport<Channel> {
 
     @Override
     protected NodeChannel connectToChannel(DiscoveryNode node, Consumer<Channel> onChannelClose) throws IOException {
-        Channel channel = null;
-        final NodeChannel nodeChannels = new NodeChannel(node, channel);
         boolean success = false;
+        NodeChannel nodeChannel = null;
         try {
             final long defaultConnectTimeout = 5000l;
 
@@ -312,18 +311,21 @@ public class Netty4Transport extends TcpTransport<Channel> {
             if (!future.isSuccess()) {
                 throw new RuntimeException("connect_timeout[" + defaultConnectTimeout + "]", future.cause());
             }
-            channel = future.channel();
+            Channel channel = future.syncUninterruptibly().channel();
+            nodeChannel = new NodeChannel(node, channel);
             success = true;
         } finally {
             if (success == false) {
                 try {
-                    nodeChannels.close();
+                    if (nodeChannel != null) {
+                        nodeChannel.close();
+                    }
                 } catch (IOException e) {
                     log.trace("exception while closing channels", e);
                 }
             }
         }
-        return nodeChannels;
+        return nodeChannel;
     }
 
     @Override
