@@ -20,7 +20,10 @@
 package org.sprintdragon.pses.core.common.util.concurrent;
 
 
+import org.sprintdragon.pses.core.common.lease.Releasable;
+
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,29 +51,49 @@ public class KeyedLock<T> {
 
     protected final ThreadLocal<KeyLock> threadLocal = new ThreadLocal<>();
 
-    public void acquire(T key) {
+    public Releasable acquire(T key) {
+        assert isHeldByCurrentThread(key) == false : "lock for " + key + " is already heald by this thread";
         while (true) {
-            if (threadLocal.get() != null) {
-                // if we are here, the thread already has the lock
-                throw new IllegalStateException("Lock already acquired in Thread" + Thread.currentThread().getId()
-                        + " for key " + key);
-            }
             KeyLock perNodeLock = map.get(key);
             if (perNodeLock == null) {
                 KeyLock newLock = new KeyLock(fair);
                 perNodeLock = map.putIfAbsent(key, newLock);
                 if (perNodeLock == null) {
                     newLock.lock();
-                    threadLocal.set(newLock);
-                    return;
+                    return new ReleasableLock(key, newLock);
                 }
             }
             assert perNodeLock != null;
             int i = perNodeLock.count.get();
             if (i > 0 && perNodeLock.count.compareAndSet(i, i + 1)) {
                 perNodeLock.lock();
-                threadLocal.set(perNodeLock);
-                return;
+                return new ReleasableLock(key, perNodeLock);
+            }
+        }
+    }
+
+    public boolean isHeldByCurrentThread(T key) {
+        KeyLock lock = map.get(key);
+        if (lock == null) {
+            return false;
+        }
+        return lock.isHeldByCurrentThread();
+    }
+
+    private final class ReleasableLock implements Releasable {
+        final T key;
+        final KeyLock lock;
+        final AtomicBoolean closed = new AtomicBoolean();
+
+        private ReleasableLock(T key, KeyLock lock) {
+            this.key = key;
+            this.lock = lock;
+        }
+
+        @Override
+        public void close() {
+            if (closed.compareAndSet(false, true)) {
+                release(key, lock);
             }
         }
     }

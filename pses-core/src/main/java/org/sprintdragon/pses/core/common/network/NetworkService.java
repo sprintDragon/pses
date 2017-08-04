@@ -34,7 +34,6 @@ import java.util.List;
 /**
  *
  */
-@Component
 @Slf4j
 public class NetworkService extends AbstractComponent {
     /**

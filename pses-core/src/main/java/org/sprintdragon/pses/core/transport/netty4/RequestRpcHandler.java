@@ -17,25 +17,11 @@ import javax.annotation.Resource;
 @Component
 @Slf4j
 @ChannelHandler.Sharable
-public class ServerRpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
-
-    @Resource
-    TransportService transportService;
+public class RequestRpcHandler extends SimpleMessageHandler<RpcRequest> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcRequest rpcRequest) throws Exception {
-        RpcResponse response = new RpcResponse();
-        try {
-            log.info("server handle request:{}", rpcRequest);
-            response.setRequestId(rpcRequest.getRequestId());
-            response.setResult("success!!!");
-//            Object result = handle(rpcRequest);
-//            response.setResult(result);
-        } catch (Throwable t) {
-            log.error(t.getMessage(), t);
-            response.setError(t);
-        }
-        channelHandlerContext.writeAndFlush(response);
+        handlerMessage(channelHandlerContext, rpcRequest);
     }
 
 

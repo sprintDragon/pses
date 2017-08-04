@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @Data
 @ToString
-public class RpcRequest {
+public class RpcRequest extends RpcMessage {
 
     //相当于requestId
     private Long requestId;

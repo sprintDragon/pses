@@ -17,6 +17,7 @@ import org.sprintdragon.pses.core.common.lease.Releasables;
 import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.transport.BoundTransportAddress;
 import org.sprintdragon.pses.core.transport.TcpTransport;
+import org.sprintdragon.pses.core.transport.dto.RpcMessage;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 import org.sprintdragon.pses.core.transport.netty4.codec.RpcDecoder;
@@ -29,25 +30,23 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 /**
  * Created by wangdi on 17-8-2.
  */
 @Slf4j
 @Component
-public class Netty4Transport extends TcpTransport {
+public class Netty4Transport extends TcpTransport<Channel> {
 
     @Resource
-    ClientRpcHandler clientRpcHandler;
+    ResponseRpcHandler responseRpcHandler;
     @Resource
-    ServerRpcHandler serverRpcHandler;
+    RequestRpcHandler requestRpcHandler;
     // package private for testing
     volatile Netty4OpenChannelsHandler serverOpenChannels;
     protected volatile Bootstrap bootstrap;
     protected final Map<String, ServerBootstrap> serverBootstraps = new ConcurrentHashMap<>();
-    private final ReadWriteLock globalLock = new ReentrantReadWriteLock();
 
     @Override
     public long serverOpen() {
@@ -110,9 +109,10 @@ public class Netty4Transport extends TcpTransport {
                         .addLast("encoder", new LengthFieldPrepender(4, false))
                         .addLast(new RpcDecoder(RpcResponse.class))
                         .addLast(new RpcEncoder(RpcRequest.class))
-                        .addLast(clientRpcHandler);
+                        .addLast(responseRpcHandler);
             }
         });
+        responseRpcHandler.setProfileName(".client");
         bootstrap.validate();
 
         return bootstrap;
@@ -152,40 +152,14 @@ public class Netty4Transport extends TcpTransport {
                         .addLast("encoder", new LengthFieldPrepender(4, false))
                         .addLast(new RpcDecoder(RpcRequest.class))
                         .addLast(new RpcEncoder(RpcResponse.class))
-                        .addLast(serverRpcHandler);
+                        .addLast(requestRpcHandler);
+                requestRpcHandler.setProfileName("default");
             }
         });
 
         serverBootstrap.validate();
 
         serverBootstraps.put(name, serverBootstrap);
-    }
-
-    protected Channel connectToChannel(DiscoveryNode node) {
-        InetSocketAddress socketAddress = node.address();
-        ChannelFuture connect = bootstrap.connect(socketAddress);
-//        connect.awaitUninterruptibly((long) (connectTimeout.millis() * 1.5));
-//        if (!connect.isSuccess()) {
-//            throw new RuntimeException("connect_timeout");
-//        }
-        connect.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture f) throws Exception {
-                if (f.isSuccess()) {
-                    log.info("connected to {}", socketAddress);
-                } else {
-                    log.info("connected to {} failed", socketAddress);
-                    f.channel().eventLoop().schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            connectToChannel(node);
-                        }
-                    }, 1, TimeUnit.SECONDS);
-                }
-            }
-        });
-
-        return connect.syncUninterruptibly()
-                .channel();
     }
 
     protected InetSocketAddress getLocalAddress(Channel channel) {
@@ -229,11 +203,6 @@ public class Netty4Transport extends TcpTransport {
     }
 
     @Override
-    public void sendResponse(Channel channel, RpcResponse response) {
-        channel.writeAndFlush(response);
-    }
-
-    @Override
     protected void closeChannels(final List<Channel> channels) throws IOException {
         Netty4Utils.closeChannels(channels);
     }
@@ -269,4 +238,96 @@ public class Netty4Transport extends TcpTransport {
 
     }
 
+    public void sendMessage(Channel channel, RpcMessage message, Runnable onRequestSent) {
+        ChannelFuture future = channel.writeAndFlush(message);
+        future.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                onRequestSent.run();
+            }
+        });
+    }
+
+//        protected NodeChannel connectToChannel(DiscoveryNode node) {
+//        InetSocketAddress socketAddress = node.address();
+//        ChannelFuture connect = bootstrap.connect(socketAddress);
+////        connect.awaitUninterruptibly((long) (connectTimeout.millis() * 1.5));
+////        if (!connect.isSuccess()) {
+////            throw new RuntimeException("connect_timeout");
+////        }
+//        connect.addListener(new ChannelFutureListener() {
+//            public void operationComplete(ChannelFuture f) throws Exception {
+//                if (f.isSuccess()) {
+//                    log.info("connected to {}", socketAddress);
+//                } else {
+//                    log.info("connected to {} failed", socketAddress);
+//                    f.channel().eventLoop().schedule(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            connectToChannel(node);
+//                        }
+//                    }, 1, TimeUnit.SECONDS);
+//                }
+//            }
+//        });
+//
+//        return connect.syncUninterruptibly()
+//                .channel();
+//    }
+
+    @Override
+    protected NodeChannel connectToChannel(DiscoveryNode node, Consumer<Channel> onChannelClose) throws IOException {
+        Channel channel = null;
+        final NodeChannel nodeChannels = new NodeChannel(node, channel);
+        boolean success = false;
+        try {
+            final long defaultConnectTimeout = 5000l;
+
+            InetSocketAddress socketAddress = node.address();
+            ChannelFuture future = bootstrap.connect(socketAddress);
+//        connect.awaitUninterruptibly((long) (connectTimeout.millis() * 1.5));
+//        if (!connect.isSuccess()) {
+//            throw new RuntimeException("connect_timeout");
+//        }
+            future.addListener(new ChannelFutureListener() {
+                public void operationComplete(ChannelFuture f) throws Exception {
+                    if (f.isSuccess()) {
+                        log.info("connected to {}", socketAddress);
+                    } else {
+                        log.info("connected to {} failed", socketAddress);
+                        f.channel().eventLoop().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    connectToChannel(node, onChannelClose);
+                                } catch (IOException e) {
+                                    log.error("connectToChannel retry error node={}", node, e);
+                                }
+                            }
+                        }, 1, TimeUnit.SECONDS);
+                    }
+                }
+            });
+            future.awaitUninterruptibly((long) (defaultConnectTimeout * 1.5));
+            if (!future.isSuccess()) {
+                throw new RuntimeException("connect_timeout[" + defaultConnectTimeout + "]", future.cause());
+            }
+            channel = future.channel();
+            success = true;
+        } finally {
+            if (success == false) {
+                try {
+                    nodeChannels.close();
+                } catch (IOException e) {
+                    log.trace("exception while closing channels", e);
+                }
+            }
+        }
+        return nodeChannels;
+    }
+
+    @Override
+    protected boolean isOpen(Channel channel) {
+        return channel.isOpen();
+    }
 }

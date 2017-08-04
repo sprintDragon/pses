@@ -10,6 +10,7 @@ import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
 import javax.annotation.Resource;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -55,10 +56,10 @@ public class TransportService extends AbstractLifecycleComponent implements Init
     }
 
     public void connectToNode(DiscoveryNode node) throws Exception {
-        transport.connectToNode(node);
+        transport.connectToNode(node, null);
     }
 
-    public void disconnectFromNode(DiscoveryNode node) {
+    public void disconnectFromNode(DiscoveryNode node) throws Exception {
         transport.disconnectFromNode(node);
     }
 
@@ -94,8 +95,9 @@ public class TransportService extends AbstractLifecycleComponent implements Init
                 throw new RuntimeException("TransportService is closed stopped can't send request");
             }
 
-            Channel targetChannel = transport.nodeChannel(node);
-            targetChannel.writeAndFlush(request);
+
+            Transport.Connection connection = transport.getConnection(node);
+            connection.sendRequest(request);
         } catch (Exception e) {
             log.error("sendRequest error", e);
         }
@@ -143,6 +145,28 @@ public class TransportService extends AbstractLifecycleComponent implements Init
         return holder.handler();
     }
 
+    public void handlerReuest(Channel channel, InetSocketAddress remoteAddress, String profileName, RpcRequest rpcRequest) {
+        log.info("handlerReuest remoteAddress={},profileName={},rpcRequest={}", remoteAddress, profileName, rpcRequest);
+        RpcResponse response = new RpcResponse();
+        try {
+            log.info("server handle request:{}", rpcRequest);
+            response.setRequestId(rpcRequest.getRequestId());
+            response.setResult("success!!!");
+//            Object result = handle(rpcRequest);
+//            response.setResult(result);
+        } catch (Throwable t) {
+            log.error(t.getMessage(), t);
+            response.setError(t);
+        }
+        channel.writeAndFlush(response);
+    }
+
+    public void handlerResponse(Channel channel, InetSocketAddress remoteAddress, String profileName, RpcResponse rpcResponse) {
+        log.info("handlerResponse remoteAddress={},profileName={},rpcRequest={}", remoteAddress, profileName, rpcResponse);
+        TransportResponseHandler handler = onResponseReceived(rpcResponse.getRequestId());
+        handler.handleResponse(rpcResponse);
+    }
+
     protected class Adapter implements TransportServiceAdapter {
 
         @Override
@@ -166,7 +190,7 @@ public class TransportService extends AbstractLifecycleComponent implements Init
                         public void run() {
                             connectionListener.onNodeDisconnected(node);
                         }
-                    });
+                    }).start();
                 }
                 for (Map.Entry<Long, RequestHolder> entry : clientHandlers.entrySet()) {
                     RequestHolder holder = entry.getValue();

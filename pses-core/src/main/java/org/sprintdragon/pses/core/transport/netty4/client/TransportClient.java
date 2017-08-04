@@ -1,11 +1,13 @@
 package org.sprintdragon.pses.core.transport.netty4.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
 import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
+import org.sprintdragon.pses.core.transport.TransportException;
 import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
@@ -17,6 +19,7 @@ import java.io.IOException;
  * Created by wangdi on 17-8-3.
  */
 @Component
+@Slf4j
 public class TransportClient extends AbstractLifecycleComponent {
 
     @Resource
@@ -28,7 +31,7 @@ public class TransportClient extends AbstractLifecycleComponent {
     }
 
     public ActionFuture<RpcResponse> sendRequest(DiscoveryNode node, RpcRequest request) {
-        System.out.println("send request:" + request);
+        log.info("sendRequest,node={},request={}", node, request);
         PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
         execute(node, request, actionFuture);
         return actionFuture;
@@ -39,6 +42,11 @@ public class TransportClient extends AbstractLifecycleComponent {
             @Override
             public RpcResponse newInstance() {
                 return new RpcResponse();
+            }
+
+            @Override
+            public void handleException(TransportException exp) {
+
             }
         });
     }

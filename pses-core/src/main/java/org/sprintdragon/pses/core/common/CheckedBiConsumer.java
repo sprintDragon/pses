@@ -17,26 +17,14 @@
  * under the License.
  */
 
-package org.sprintdragon.pses.core.transport;
+package org.sprintdragon.pses.core.common;
 
-import org.sprintdragon.pses.core.transport.dto.RpcResponse;
+import java.util.function.BiConsumer;
 
 /**
- *
+ * A {@link BiConsumer}-like interface which allows throwing checked exceptions.
  */
-public interface TransportResponseHandler<T extends RpcResponse> {
-
-    /**
-     * creates a new instance of the return type from the remote call.
-     * called by the infra before de-serializing the response.
-     *
-     * @return a new response copy.
-     */
-    T newInstance();
-
-    void handleResponse(T response);
-
-    void handleException(TransportException exp);
-
-//    String executor();
+@FunctionalInterface
+public interface CheckedBiConsumer<T, E extends Exception> {
+    void accept(T t) throws E;
 }
