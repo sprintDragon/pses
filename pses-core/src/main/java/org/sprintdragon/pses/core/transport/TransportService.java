@@ -56,7 +56,9 @@ public class TransportService extends AbstractLifecycleComponent implements Init
     }
 
     public void connectToNode(DiscoveryNode node) throws Exception {
-        transport.connectToNode(node, null);
+        transport.connectToNode(node, connection -> {
+            //todo handshake
+        });
     }
 
     public void disconnectFromNode(DiscoveryNode node) throws Exception {
