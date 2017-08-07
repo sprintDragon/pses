@@ -2,6 +2,7 @@ package org.sprintdragon.pses.core.transport;
 
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
@@ -151,7 +152,7 @@ public class TransportService extends AbstractLifecycleComponent implements Init
     }
 
     public void handlerReuest(Channel channel, InetSocketAddress remoteAddress, String profileName, RpcRequest rpcRequest) {
-        log.info("handlerReuest remoteAddress={},profileName={},rpcRequest={}", remoteAddress, profileName, rpcRequest);
+        adapter.onRequestReceived(rpcRequest.getRequestId(), rpcRequest.getAction());
         RpcResponse response = new RpcResponse();
         try {
             log.info("server handle request:{}", rpcRequest);
@@ -159,6 +160,7 @@ public class TransportService extends AbstractLifecycleComponent implements Init
             response.setResult("success!!!");
 //            Object result = handle(rpcRequest);
 //            response.setResult(result);
+//            Thread.sleep(3000);
         } catch (Throwable t) {
             log.error(t.getMessage(), t);
             response.setError(t);
@@ -242,7 +244,12 @@ public class TransportService extends AbstractLifecycleComponent implements Init
     public void handlerResponse(InetSocketAddress remoteAddress, String profileName, RpcResponse rpcResponse) {
         log.info("handlerResponse remoteAddress={},profileName={},rpcRequest={}", remoteAddress, profileName, rpcResponse);
         TransportResponseHandler handler = adapter.onResponseReceived(rpcResponse.getRequestId());
-        handler.handleResponse(rpcResponse);
+        if (handler != null) {
+            RpcResponse response = handler.newInstance();
+            BeanUtils.copyProperties(rpcResponse, response);
+            response.setRemoteAddress(remoteAddress);
+            handler.handleResponse(response);
+        }
     }
 
     static class RequestHolder<T extends RpcResponse> {
@@ -283,6 +290,11 @@ public class TransportService extends AbstractLifecycleComponent implements Init
     }
 
     protected class Adapter implements TransportServiceAdapter {
+
+        @Override
+        public void onRequestReceived(long requestId, String action) {
+            log.info("onRequestReceived requestId={},action={}", requestId, action);
+        }
 
         @Override
         public TransportResponseHandler onResponseReceived(final long requestId) {
