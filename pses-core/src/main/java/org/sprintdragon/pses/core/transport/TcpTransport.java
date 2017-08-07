@@ -469,7 +469,7 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent i
 
     }
 
-    public final class NodeChannel implements Connection {
+    public final class NodeChannel implements Connection, Comparable<NodeChannel> {
         private final Channel channel;
         private final DiscoveryNode node;
         private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -477,6 +477,11 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent i
         public NodeChannel(DiscoveryNode node, Channel channel) {
             this.node = node;
             this.channel = channel;
+        }
+
+        @Override
+        public int compareTo(NodeChannel o) {
+            return o.getNode().getNodeId().compareTo(node.getNodeId());
         }
 
         public boolean isChannel(Channel channel1) {
