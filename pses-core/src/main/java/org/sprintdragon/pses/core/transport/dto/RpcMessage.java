@@ -7,4 +7,8 @@ import lombok.ToString;
 @ToString
 public class RpcMessage {
 
+    private long timeout;
+
+    private boolean compress;
+
 }

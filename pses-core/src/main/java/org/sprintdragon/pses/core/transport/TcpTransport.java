@@ -14,6 +14,7 @@ import org.sprintdragon.pses.core.common.util.concurrent.KeyedLock;
 import org.sprintdragon.pses.core.transport.dto.RpcMessage;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
+import org.sprintdragon.pses.core.transport.exception.TransportException;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -269,7 +270,7 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent i
             if (handler != null) {
                 // there might be a race removing this or this method might be called twice concurrently depending on how
                 // the channel is closed ie. due to connection reset or broken pipes
-                handler.handleException(new TransportException("connection reset"));
+                handler.handleException(new TransportException(null, "connection reset"));
             }
         }
     }

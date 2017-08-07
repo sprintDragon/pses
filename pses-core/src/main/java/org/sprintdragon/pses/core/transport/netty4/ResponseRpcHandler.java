@@ -15,13 +15,7 @@ public class ResponseRpcHandler extends SimpleMessageHandler<RpcResponse> {
     //messageReceived
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RpcResponse rpcResponse) throws Exception {
-        handlerMessage(ctx, rpcResponse);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
-        cause.printStackTrace();
+        transportService.handlerResponse(getRemoteAddress(ctx), profileName, rpcResponse);
     }
 
 }

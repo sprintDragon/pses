@@ -18,7 +18,7 @@ public class RpcRequest extends RpcMessage {
     private String userId;
 
     //调用的action名
-    private String actionName;
+    private String action;
 
     //调用的参数
     private String paramJson;

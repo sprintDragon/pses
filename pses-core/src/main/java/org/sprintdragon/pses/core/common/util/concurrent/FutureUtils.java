@@ -17,27 +17,22 @@
  * under the License.
  */
 
-package org.sprintdragon.pses.core.transport;
+package org.sprintdragon.pses.core.common.util.concurrent;
 
-import org.sprintdragon.pses.core.transport.dto.RpcResponse;
-import org.sprintdragon.pses.core.transport.exception.TransportException;
+
+import org.sprintdragon.pses.core.common.SuppressForbidden;
+
+import java.util.concurrent.Future;
 
 /**
- *
  */
-public interface TransportResponseHandler<T extends RpcResponse> {
+public class FutureUtils {
 
-    /**
-     * creates a new instance of the return type from the remote call.
-     * called by the infra before de-serializing the response.
-     *
-     * @return a new response copy.
-     */
-    T newInstance();
-
-    void handleResponse(T response);
-
-    void handleException(TransportException exp);
-
-//    String executor();
+    @SuppressForbidden(reason = "Future#cancel()")
+    public static boolean cancel(Future<?> toCancel) {
+        if (toCancel != null) {
+            return toCancel.cancel(false); // this method is a forbidden API since it interrupts threads
+        }
+        return false;
+    }
 }

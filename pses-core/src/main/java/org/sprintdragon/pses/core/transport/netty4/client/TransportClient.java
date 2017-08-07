@@ -7,7 +7,7 @@ import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
 import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
-import org.sprintdragon.pses.core.transport.TransportException;
+import org.sprintdragon.pses.core.transport.exception.TransportException;
 import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;

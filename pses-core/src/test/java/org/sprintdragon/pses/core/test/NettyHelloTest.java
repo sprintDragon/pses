@@ -29,7 +29,7 @@ public class NettyHelloTest {
     @Test
     public void testHello() throws Exception {
         RpcRequest rpcRequest = new RpcRequest();
-        rpcRequest.setActionName("xxx");
+        rpcRequest.setAction("xxx");
         RpcResponse rpcResponse = client.sendRequest(namedNode, rpcRequest).get();
         System.out.println("##" + rpcResponse);
     }

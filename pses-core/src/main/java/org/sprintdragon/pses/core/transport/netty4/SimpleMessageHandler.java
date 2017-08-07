@@ -24,17 +24,19 @@ public abstract class SimpleMessageHandler<T> extends SimpleChannelInboundHandle
         this.profileName = profileName;
     }
 
-    public void handlerMessage(ChannelHandlerContext ctx, T t) {
-        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-        if (t instanceof RpcResponse) {
-            transportService.handlerResponse(ctx.channel(), remoteAddress, profileName, (RpcResponse) t);
-        } else if (t instanceof RpcRequest) {
-            transportService.handlerReuest(ctx.channel(), remoteAddress, profileName, (RpcRequest) t);
-        } else {
-            log.warn("handlerMessage unknown type msg to handle t=", t);
-        }
+    protected InetSocketAddress getRemoteAddress(ChannelHandlerContext ctx) {
+        return (InetSocketAddress) ctx.channel().remoteAddress();
+    }
 
-
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        log.error(cause.getMessage(), cause);
+        RpcResponse response = new RpcResponse();
+//        if(cause instanceof ServerException){
+//            response.setTraceId(((ServerException) cause).getTraceId());
+//        }
+        response.setError(cause);
+        ctx.writeAndFlush(response);
     }
 
 }
