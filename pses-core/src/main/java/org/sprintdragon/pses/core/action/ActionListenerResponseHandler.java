@@ -21,6 +21,7 @@ package org.sprintdragon.pses.core.action;
 
 import org.sprintdragon.pses.core.transport.BaseTransportResponseHandler;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
+import org.sprintdragon.pses.core.transport.exception.TransportException;
 
 /**
  * A simple base class for action response listeners, defaulting to using the SAME executor (as its
@@ -39,10 +40,10 @@ public abstract class ActionListenerResponseHandler<Response extends RpcResponse
         listener.onResponse(response);
     }
 
-//    @Override
-//    public void handleException(TransportException e) {
-//        listener.onFailure(e);
-//    }
+    @Override
+    public void handleException(TransportException e) {
+        listener.onFailure(e);
+    }
 
 //    @Override
 //    public String executor() {

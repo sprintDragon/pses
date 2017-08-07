@@ -43,11 +43,6 @@ public class TransportClient extends AbstractLifecycleComponent {
             public RpcResponse newInstance() {
                 return new RpcResponse();
             }
-
-            @Override
-            public void handleException(TransportException exp) {
-
-            }
         });
     }
 
