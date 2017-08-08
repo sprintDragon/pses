@@ -1,9 +1,11 @@
-package org.sprintdragon.pses.core;
+package org.sprintdragon.pses.configure;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.sprintdragon.pses.core.common.network.NetworkService;
+import org.sprintdragon.pses.core.common.settings.Settings;
 
+import javax.annotation.Resource;
 import java.util.Collections;
 
 /**
@@ -12,11 +14,12 @@ import java.util.Collections;
 @Configuration
 public class ServerConfiguration {
 
+    @Resource
+    Settings settings;
 
     @Bean
     public NetworkService networkService() {
-        return new NetworkService(Collections.emptyList());
+        return new NetworkService(settings, Collections.emptyList());
     }
-
 
 }

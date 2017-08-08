@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.sprintdragon.pses.core.PsesServerApplication;
+import org.sprintdragon.pses.PsesServerApplication;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;

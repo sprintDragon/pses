@@ -49,6 +49,10 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent i
     private final CounterMetric numHandshakes = new CounterMetric();
     private final AtomicLong requestIdGenerator = new AtomicLong();
 
+    public TcpTransport(Settings settings) {
+        super(settings);
+    }
+
     @Override
     public void setTransportServiceAdapter(TransportServiceAdapter transportServiceAdapter) {
         this.transportServiceAdapter = transportServiceAdapter;

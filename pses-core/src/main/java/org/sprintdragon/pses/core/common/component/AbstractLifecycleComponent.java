@@ -20,6 +20,7 @@
 package org.sprintdragon.pses.core.common.component;
 
 import lombok.extern.slf4j.Slf4j;
+import org.sprintdragon.pses.core.common.settings.Settings;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,6 +49,10 @@ public abstract class AbstractLifecycleComponent extends AbstractComponent imple
     @Override
     public void removeLifecycleListener(LifecycleListener listener) {
         listeners.remove(listener);
+    }
+
+    public AbstractLifecycleComponent(Settings settings) {
+        super(settings);
     }
 
     @SuppressWarnings({"unchecked"})

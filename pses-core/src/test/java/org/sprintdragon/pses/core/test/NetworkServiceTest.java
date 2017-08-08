@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.sprintdragon.pses.core.common.network.NetworkService;
+import org.sprintdragon.pses.core.common.settings.Settings;
 
 import java.util.Collections;
 
@@ -18,7 +19,7 @@ public class NetworkServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        networkService = new NetworkService(Collections.emptyList());
+        networkService = new NetworkService(new Settings(), Collections.emptyList());
     }
 
     @Test

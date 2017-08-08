@@ -48,6 +48,10 @@ public class Netty4Transport extends TcpTransport<Channel> {
     protected volatile Bootstrap bootstrap;
     protected final Map<String, ServerBootstrap> serverBootstraps = new ConcurrentHashMap<>();
 
+    public Netty4Transport(Settings settings) {
+        super(settings);
+    }
+
     @Override
     public long serverOpen() {
         Netty4OpenChannelsHandler channels = serverOpenChannels;

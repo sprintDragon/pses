@@ -19,20 +19,16 @@
 
 package org.sprintdragon.pses.core.common.component;
 
-import lombok.extern.slf4j.Slf4j;
 import org.sprintdragon.pses.core.common.settings.Settings;
-
-import javax.annotation.Resource;
 
 public abstract class AbstractComponent {
 
-    @Resource
     protected Settings settings;
 
 
-//    public AbstractComponent(Settings settings, Class customClass) {
-//        this.settings = settings;
-//    }
+    public AbstractComponent(Settings settings) {
+        this.settings = settings;
+    }
 
 
 }

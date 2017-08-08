@@ -38,6 +38,6 @@ public interface TransportChannel {
 
     void sendResponse(RpcResponse response) throws IOException;
 
-    void sendResponse(Exception exception) throws IOException;
+    void sendResponse(Throwable throwable) throws IOException;
 
 }

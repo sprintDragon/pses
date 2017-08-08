@@ -70,7 +70,7 @@ public abstract class AdapterActionFuture<T, L> extends BaseFuture<T> implements
     }
 
     @Override
-    public void onFailure(Exception e) {
+    public void onFailure(Throwable e) {
         setException(e);
     }
 

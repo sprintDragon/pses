@@ -20,6 +20,8 @@ public interface TransportServiceAdapter extends TransportConnectionListener{
      */
     TransportResponseHandler onResponseReceived(long requestId);
 
+    RequestHandlerRegistry getRequestHandler(String action);
+
     void raiseNodeConnected(DiscoveryNode node);
 
     void raiseNodeDisconnected(DiscoveryNode node);

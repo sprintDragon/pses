@@ -23,6 +23,7 @@ package org.sprintdragon.pses.core.common.network;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.common.component.AbstractComponent;
+import org.sprintdragon.pses.core.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -54,7 +55,8 @@ public class NetworkService extends AbstractComponent {
 
     private final List<CustomNameResolver> customNameResolvers;
 
-    public NetworkService(List<CustomNameResolver> customNameResolvers) {
+    public NetworkService(Settings settings, List<CustomNameResolver> customNameResolvers) {
+        super(settings);
         IfConfig.logIfNecessary();
         this.customNameResolvers = customNameResolvers;
     }

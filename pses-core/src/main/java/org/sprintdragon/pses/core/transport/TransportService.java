@@ -1,12 +1,16 @@
 package org.sprintdragon.pses.core.transport;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
+import org.sprintdragon.pses.core.common.settings.Settings;
 import org.sprintdragon.pses.core.common.util.concurrent.FutureUtils;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
@@ -46,12 +50,21 @@ public class TransportService extends AbstractLifecycleComponent implements Init
         }
     });
 
+    /**
+     * ImmutableMap 不可变集合
+     */
+    volatile ImmutableMap<String, RequestHandlerRegistry> requestHandlers = ImmutableMap.of();
+
     final Object requestHandlerMutex = new Object();
 
     final AtomicLong requestIds = new AtomicLong();
     private TransportService.Adapter adapter;
     @Resource
     private Transport transport;
+
+    public TransportService(Settings settings) {
+        super(settings);
+    }
 
 //    volatile ImmutableMap<String, RequestHandlerRegistry> requestHandlers = ImmutableMap.of();
 
@@ -155,12 +168,10 @@ public class TransportService extends AbstractLifecycleComponent implements Init
         adapter.onRequestReceived(rpcRequest.getRequestId(), rpcRequest.getAction());
         RpcResponse response = new RpcResponse();
         try {
-            log.info("server handle request:{}", rpcRequest);
             response.setRequestId(rpcRequest.getRequestId());
             response.setResult("success!!!");
 //            Object result = handle(rpcRequest);
 //            response.setResult(result);
-//            Thread.sleep(3000);
         } catch (Throwable t) {
             log.error(t.getMessage(), t);
             response.setError(t);
@@ -308,6 +319,11 @@ public class TransportService extends AbstractLifecycleComponent implements Init
         }
 
         @Override
+        public RequestHandlerRegistry getRequestHandler(String action) {
+            return requestHandlers.get(action);
+        }
+
+        @Override
         public void raiseNodeConnected(DiscoveryNode node) {
             new Thread(new Runnable() {
                 @Override
@@ -363,6 +379,62 @@ public class TransportService extends AbstractLifecycleComponent implements Init
                 log.warn("Received response for a request that has timed out, sent [{}ms] ago, timed out [{}ms] ago, action [{}], node [{}], id [{}]", time - timeoutInfoHolder.sentTime(), time - timeoutInfoHolder.timeoutTime(), timeoutInfoHolder.action(), timeoutInfoHolder.node(), requestId);
             } else {
                 log.warn("Transport response handler not found of id [{}]", requestId);
+            }
+        }
+    }
+
+
+    /**
+     * Registers a new request handler
+     *
+     * @param action  The action the request handler is associated with
+     * @param request The request class that will be used to constrcut new instances for streaming
+     * @param handler The handler itself that implements the request handling
+     */
+    public final <Request extends RpcRequest> void registerRequestHandler(String action, Class<Request> request, String executor, TransportRequestHandler<Request> handler) {
+        registerRequestHandler(action, request, executor, false, handler);
+    }
+
+
+    /**
+     * Registers a new request handler
+     *
+     * @param action         The action the request handler is associated with
+     * @param requestFactory a callable to be used construct new instances for streaming
+     * @param handler        The handler itself that implements the request handling
+     */
+    public <Request extends RpcRequest> void registerRequestHandler(String action, Callable<Request> requestFactory, String executor, TransportRequestHandler<Request> handler) {
+        RequestHandlerRegistry<Request> reg = new RequestHandlerRegistry<>(action, requestFactory, handler, executor, false);
+        registerRequestHandler(reg);
+    }
+
+    /**
+     * Registers a new request handler
+     *
+     * @param action         The action the request handler is associated with
+     * @param request        The request class that will be used to constrcut new instances for streaming
+     * @param forceExecution Force execution on the executor queue and never reject it
+     * @param handler        The handler itself that implements the request handling
+     */
+    public <Request extends RpcRequest> void registerRequestHandler(String action, Class<Request> request, String executor, boolean forceExecution, TransportRequestHandler<Request> handler) {
+        RequestHandlerRegistry<Request> reg = new RequestHandlerRegistry<>(action, request, handler, executor, forceExecution);
+        registerRequestHandler(reg);
+    }
+
+    /**
+     * 注册请求处理器
+     *
+     * @param reg
+     * @param <Request>
+     */
+    protected <Request extends RpcRequest> void registerRequestHandler(RequestHandlerRegistry<Request> reg) {
+        synchronized (requestHandlerMutex) {
+            RequestHandlerRegistry replaced = requestHandlers.get(reg.getAction());
+            Map map = Maps.newHashMap();
+            map.put(reg.getAction(), reg);
+            requestHandlers = ImmutableMap.copyOf(map);
+            if (replaced != null) {
+                log.warn("registered two transport handlers for action {}, handlers: {}, {}", reg.getAction(), reg.getHandler(), replaced.getHandler());
             }
         }
     }

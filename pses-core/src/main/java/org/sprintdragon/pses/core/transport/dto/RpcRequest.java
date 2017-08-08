@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @Data
 @ToString
-public class RpcRequest extends RpcMessage {
+public class RpcRequest extends RpcMessage<RpcRequest> {
 
     //相当于requestId
     private Long requestId;
@@ -23,4 +23,10 @@ public class RpcRequest extends RpcMessage {
     //调用的参数
     private String paramJson;
 
+    public RpcRequest() {
+    }
+
+    public RpcRequest(RpcRequest message) {
+        super(message);
+    }
 }

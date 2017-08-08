@@ -68,10 +68,10 @@ public final class TcpTransportChannel implements TransportChannel {
     }
 
     @Override
-    public void sendResponse(Exception exception) throws IOException {
+    public void sendResponse(Throwable throwable) throws IOException {
         try {
             RpcResponse rpcResponse = new RpcResponse();
-            rpcResponse.setError(exception);
+            rpcResponse.setError(throwable);
             rpcResponse.setRequestId(requestId);
             transport.sendMessage(channel, rpcResponse, new Runnable() {
                 @Override

@@ -7,7 +7,7 @@ import java.net.InetSocketAddress;
 
 @Data
 @ToString
-public class RpcMessage {
+public class RpcMessage<TM extends RpcMessage<TM>> {
 
     private InetSocketAddress remoteAddress;
 
@@ -15,4 +15,12 @@ public class RpcMessage {
 
     private boolean compress;
 
+    protected RpcMessage() {
+    }
+
+    protected RpcMessage(TM message) {
+        this.remoteAddress = message.getRemoteAddress();
+        this.timeout = message.getTimeout();
+        this.compress = message.isCompress();
+    }
 }
