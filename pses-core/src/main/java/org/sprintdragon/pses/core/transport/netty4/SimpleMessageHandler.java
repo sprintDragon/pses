@@ -3,6 +3,7 @@ package org.sprintdragon.pses.core.transport.netty4;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.sprintdragon.pses.core.transport.TcpTransport;
 import org.sprintdragon.pses.core.transport.TransportService;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
@@ -16,9 +17,12 @@ import java.net.InetSocketAddress;
 @Slf4j
 public abstract class SimpleMessageHandler<T> extends SimpleChannelInboundHandler<T> {
 
-    @Resource
-    TransportService transportService;
+    protected TcpTransport transport;
     protected String profileName;
+
+    public SimpleMessageHandler(TcpTransport transport) {
+        this.transport = transport;
+    }
 
     public void setProfileName(String profileName) {
         this.profileName = profileName;

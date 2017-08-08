@@ -24,8 +24,8 @@ import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class TcpTransportChannel implements TransportChannel {
-    private final TcpTransport transport;
+public final class TcpTransportChannel<Channel> implements TransportChannel {
+    private final TcpTransport<Channel> transport;
     protected final String action;
     protected final long requestId;
     private final String profileName;

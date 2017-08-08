@@ -1,8 +1,10 @@
 package org.sprintdragon.pses.core.transport;
 
 import com.google.common.collect.Lists;
+import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.IOUtils;
+import org.springframework.beans.BeanUtils;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.CheckedBiConsumer;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
@@ -14,6 +16,7 @@ import org.sprintdragon.pses.core.common.util.concurrent.KeyedLock;
 import org.sprintdragon.pses.core.transport.dto.RpcMessage;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
+import org.sprintdragon.pses.core.transport.exception.ActionNotFoundTransportException;
 import org.sprintdragon.pses.core.transport.exception.TransportException;
 
 import javax.annotation.Resource;
@@ -336,6 +339,47 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent i
     protected final void ensureOpen() {
         if (lifecycle.started() == false) {
             throw new IllegalStateException("transport has been stopped");
+        }
+    }
+
+    public void handlerReuest(Channel channel, InetSocketAddress remoteAddress, String profileName, RpcRequest rpcRequest) {
+        transportServiceAdapter.onRequestReceived(rpcRequest.getRequestId(), rpcRequest.getAction());
+        String action = rpcRequest.getAction();
+        final TcpTransportChannel transportChannel = new TcpTransportChannel(this, channel, "", action, rpcRequest.getRequestId(), profileName);
+        final RequestHandlerRegistry reg = transportServiceAdapter.getRequestHandler(action);
+        try {
+            if (reg == null) {
+                throw new ActionNotFoundTransportException(null, action);
+            }
+        } catch (Throwable e) {
+            try {
+                transportChannel.sendResponse(e);
+            } catch (IOException e1) {
+                log.warn("Failed to send error message back to client for action [" + action + "]", e);
+                log.warn("Actual Exception", e1);
+            }
+        }
+//        RpcResponse response = new RpcResponse();
+//        try {
+//            response.setRequestId(rpcRequest.getRequestId());
+//            response.setResult("success!!!");
+////            Object result = handle(rpcRequest);
+////            response.setResult(result);
+//        } catch (Throwable t) {
+//            log.error(t.getMessage(), t);
+//            response.setError(t);
+//        }
+//        channel.writeAndFlush(response);
+    }
+
+    public void handlerResponse(InetSocketAddress remoteAddress, String profileName, RpcResponse rpcResponse) {
+        log.info("handlerResponse remoteAddress={},profileName={},rpcRequest={}", remoteAddress, profileName, rpcResponse);
+        TransportResponseHandler handler = transportServiceAdapter.onResponseReceived(rpcResponse.getRequestId());
+        if (handler != null) {
+            RpcResponse response = handler.newInstance();
+            BeanUtils.copyProperties(rpcResponse, response);
+            response.setRemoteAddress(remoteAddress);
+            handler.handleResponse(response);
         }
     }
 

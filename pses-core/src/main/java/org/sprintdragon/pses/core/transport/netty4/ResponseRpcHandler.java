@@ -3,6 +3,7 @@ package org.sprintdragon.pses.core.transport.netty4;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import org.springframework.stereotype.Component;
+import org.sprintdragon.pses.core.transport.TcpTransport;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
 /**
@@ -12,10 +13,14 @@ import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 @ChannelHandler.Sharable
 public class ResponseRpcHandler extends SimpleMessageHandler<RpcResponse> {
 
+    public ResponseRpcHandler(TcpTransport transport) {
+        super(transport);
+    }
+
     //messageReceived
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RpcResponse rpcResponse) throws Exception {
-        transportService.handlerResponse(getRemoteAddress(ctx), profileName, rpcResponse);
+        transport.handlerResponse(getRemoteAddress(ctx), profileName, rpcResponse);
     }
 
 }

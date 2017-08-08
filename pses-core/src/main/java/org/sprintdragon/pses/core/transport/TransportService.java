@@ -6,7 +6,6 @@ import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
@@ -164,21 +163,6 @@ public class TransportService extends AbstractLifecycleComponent implements Init
         return requestIds.getAndIncrement();
     }
 
-    public void handlerReuest(Channel channel, InetSocketAddress remoteAddress, String profileName, RpcRequest rpcRequest) {
-        adapter.onRequestReceived(rpcRequest.getRequestId(), rpcRequest.getAction());
-        RpcResponse response = new RpcResponse();
-        try {
-            response.setRequestId(rpcRequest.getRequestId());
-            response.setResult("success!!!");
-//            Object result = handle(rpcRequest);
-//            response.setResult(result);
-        } catch (Throwable t) {
-            log.error(t.getMessage(), t);
-            response.setError(t);
-        }
-        channel.writeAndFlush(response);
-    }
-
     class TimeoutHandler implements Runnable {
 
         private final long requestId;
@@ -249,17 +233,6 @@ public class TransportService extends AbstractLifecycleComponent implements Init
 
         public long timeoutTime() {
             return timeoutTime;
-        }
-    }
-
-    public void handlerResponse(InetSocketAddress remoteAddress, String profileName, RpcResponse rpcResponse) {
-        log.info("handlerResponse remoteAddress={},profileName={},rpcRequest={}", remoteAddress, profileName, rpcResponse);
-        TransportResponseHandler handler = adapter.onResponseReceived(rpcResponse.getRequestId());
-        if (handler != null) {
-            RpcResponse response = handler.newInstance();
-            BeanUtils.copyProperties(rpcResponse, response);
-            response.setRemoteAddress(remoteAddress);
-            handler.handleResponse(response);
         }
     }
 
