@@ -1,7 +1,6 @@
 package org.sprintdragon.pses.core.transport;
 
 import com.google.common.collect.Lists;
-import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.IOUtils;
 import org.springframework.beans.BeanUtils;
@@ -351,6 +350,15 @@ public abstract class TcpTransport<Channel> extends AbstractLifecycleComponent i
             if (reg == null) {
                 throw new ActionNotFoundTransportException(null, action);
             }
+            final RpcRequest request = reg.newRequest();
+            BeanUtils.copyProperties(rpcRequest, request);
+            request.setRemoteAddress(remoteAddress);
+//            if (ThreadPool.Names.SAME.equals(reg.getExecutor())) {
+            //noinspection unchecked
+            reg.getHandler().messageReceived(request, transportChannel);
+//            } else {
+//                threadPool.executor(reg.getExecutor()).execute(new RequestHandler(reg, request, transportChannel));
+//            }
         } catch (Throwable e) {
             try {
                 transportChannel.sendResponse(e);

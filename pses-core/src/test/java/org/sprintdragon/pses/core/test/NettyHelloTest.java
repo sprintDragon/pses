@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.sprintdragon.pses.PsesServerApplication;
+import org.sprintdragon.pses.core.action.get.GetAction;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
@@ -29,7 +30,7 @@ public class NettyHelloTest {
     @Test
     public void testHello() throws Exception {
         RpcRequest rpcRequest = new RpcRequest();
-        rpcRequest.setAction("xxx");
+        rpcRequest.setAction(GetAction.NAME);
         RpcResponse rpcResponse = client.sendRequest(namedNode, rpcRequest).get();
         System.out.println("##" + rpcResponse);
     }
