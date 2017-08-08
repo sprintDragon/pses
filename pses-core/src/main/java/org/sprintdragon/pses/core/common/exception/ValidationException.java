@@ -50,10 +50,7 @@ public class ValidationException extends IllegalArgumentException {
         }
     }
 
-    /**
-     * Returns the validation errors accumulated
-     */
-    public final List<String> validationErrors() {
+    public List<String> getValidationErrors() {
         return validationErrors;
     }
 

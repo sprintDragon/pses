@@ -403,7 +403,7 @@ public class TransportService extends AbstractLifecycleComponent implements Init
     protected <Request extends RpcRequest> void registerRequestHandler(RequestHandlerRegistry<Request> reg) {
         synchronized (requestHandlerMutex) {
             RequestHandlerRegistry replaced = requestHandlers.get(reg.getAction());
-            Map map = Maps.newHashMap();
+            Map map = Maps.newHashMap(requestHandlers);
             map.put(reg.getAction(), reg);
             requestHandlers = ImmutableMap.copyOf(map);
             if (replaced != null) {
