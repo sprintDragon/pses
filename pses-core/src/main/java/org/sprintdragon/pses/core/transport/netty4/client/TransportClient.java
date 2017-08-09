@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.sprintdragon.pses.core.action.ActionFuture;
 import org.sprintdragon.pses.core.action.ActionListenerResponseHandler;
+import org.sprintdragon.pses.core.action.supprot.AdapterActionFuture;
+import org.sprintdragon.pses.core.action.supprot.CompletableActionFuture;
 import org.sprintdragon.pses.core.action.supprot.PlainActionFuture;
 import org.sprintdragon.pses.core.cluster.node.DiscoveryNode;
 import org.sprintdragon.pses.core.common.component.AbstractLifecycleComponent;
@@ -36,12 +38,12 @@ public class TransportClient extends AbstractLifecycleComponent {
 
     public ActionFuture<RpcResponse> sendRequest(DiscoveryNode node, RpcRequest request) {
         log.info("sendRequest,node={},request={}", node, request);
-        PlainActionFuture<RpcResponse> actionFuture = PlainActionFuture.newFuture();
+        CompletableActionFuture<RpcResponse> actionFuture = CompletableActionFuture.newFuture();
         execute(node, request, actionFuture);
         return actionFuture;
     }
 
-    private void execute(DiscoveryNode node, RpcRequest request, PlainActionFuture<RpcResponse> actionFuture) {
+    private void execute(DiscoveryNode node, RpcRequest request, CompletableActionFuture<RpcResponse> actionFuture) {
         transportService.sendRequest(node, request, new ActionListenerResponseHandler<RpcResponse>(actionFuture) {
             @Override
             public RpcResponse newInstance() {
