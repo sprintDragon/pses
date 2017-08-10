@@ -4,11 +4,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.sprintdragon.pses.core.transport.TcpTransport;
-import org.sprintdragon.pses.core.transport.TransportService;
-import org.sprintdragon.pses.core.transport.dto.RpcRequest;
 import org.sprintdragon.pses.core.transport.dto.RpcResponse;
 
-import javax.annotation.Resource;
 import java.net.InetSocketAddress;
 
 /**
@@ -43,4 +40,10 @@ public abstract class SimpleMessageHandler<T> extends SimpleChannelInboundHandle
         ctx.writeAndFlush(response);
     }
 
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        String str = "RamoteAddress : " + ctx.channel().remoteAddress() + " active !";
+        ctx.writeAndFlush("{welcome:+" + str + "}");
+        super.channelActive(ctx);
+    }
 }
