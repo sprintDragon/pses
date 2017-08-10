@@ -40,10 +40,10 @@ public abstract class SimpleMessageHandler<T> extends SimpleChannelInboundHandle
         ctx.writeAndFlush(response);
     }
 
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        String str = "RamoteAddress : " + ctx.channel().remoteAddress() + " active !";
-        ctx.writeAndFlush("{welcome:+" + str + "}");
-        super.channelActive(ctx);
-    }
+//    @Override
+//    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+//        String str = "RamoteAddress : " + ctx.channel().remoteAddress() + " active !";
+//        ctx.writeAndFlush("{welcome:+" + str + "}");
+//        super.channelActive(ctx);
+//    }
 }
